@@ -6,6 +6,7 @@ import { AdminPanel, AppSettings } from './components/AdminPanel';
 import { Navbar } from './components/Navbar';
 import { HomePage } from './components/HomePage';
 import { ToastContainer } from './components/ToastContainer';
+import { ApiKeyModal } from './components/ApiKeyModal';
 import { GeneratedSpeech, GenerationState, VoicePreset, VoiceActor } from './types';
 import { generateSpeech } from './services/geminiService';
 import { 
@@ -47,6 +48,7 @@ const App: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState('home');
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
 
   // Load saved state on mount
@@ -258,6 +260,13 @@ const App: React.FC = () => {
       {/* Toast Notifications */}
       <ToastContainer />
 
+      {/* API Key Modal */}
+      <ApiKeyModal
+        isOpen={showApiKey}
+        onClose={() => setShowApiKey(false)}
+        lang={lang}
+      />
+
       {/* Error Banner */}
       {errorMessage && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-lg animate-bounce-in-custom">
@@ -281,6 +290,7 @@ const App: React.FC = () => {
         onToggleLang={toggleLang}
         onLogout={handleLogout}
         onOpenAdmin={() => setShowAdmin(true)}
+        onOpenApiKey={() => setShowApiKey(true)}
         onNavigate={setCurrentPage}
         currentPage={currentPage}
         navItems={settings.navItems}

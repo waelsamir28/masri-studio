@@ -9,6 +9,7 @@ interface NavbarProps {
   onToggleLang: () => void;
   onLogout: () => void;
   onOpenAdmin: () => void;
+  onOpenApiKey: () => void;
   onNavigate: (page: string) => void;
   currentPage: string;
   navItems: { id: string; label: string; labelAr: string; icon: string; visible: boolean }[];
@@ -16,7 +17,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  lang, theme, currentUser, isAdmin, onToggleTheme, onToggleLang, onLogout, onOpenAdmin, onNavigate, currentPage, navItems, appName
+  lang, theme, currentUser, isAdmin, onToggleTheme, onToggleLang, onLogout, onOpenAdmin, onOpenApiKey, onNavigate, currentPage, navItems, appName
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -93,6 +94,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <span>{lang === 'ar' ? 'لوحة التحكم' : 'Control Panel'}</span>
                   </button>
                 )}
+                <button
+                  onClick={onOpenApiKey}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-txt-secondary hover:text-accent hover:bg-accent/5 transition-all"
+                >
+                  <i className="fas fa-key w-4 text-center"></i>
+                  <span>{lang === 'ar' ? 'مفتاح API' : 'API Key'}</span>
+                </button>
                 <button
                   onClick={onLogout}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/5 transition-all"
