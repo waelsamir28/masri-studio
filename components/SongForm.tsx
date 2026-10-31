@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import { VoicePreset, VOICE_PRESETS, VOICE_ACTORS, VoiceActor, Gender } from '../types';
 import { generateTextScript, enhanceScriptWithActor, generateSpeech } from '../services/geminiService';
@@ -31,15 +30,11 @@ const QUICK_PHRASES = [
   "طعم يجنن وريحة تاخود العقل، جرب مرة ومش هتندم أبداً"
 ];
 
-// Expanded Emotion Tags for insertion (including Ad specific)
 const EMOTION_TAGS = [
-  // Basic
   { label: '😄 ضحكة', value: ' (ضحكة) ' },
   { label: '😔 تنهيدة', value: ' (تنهيدة) ' },
   { label: '🤫 همس', value: ' (همس) ' },
   { label: '⏳ صمت', value: ' ... ' },
-  
-  // Ad / Performance
   { label: '🔥 حماس', value: ' (بمنتهى الحماس والطاقة) ' },
   { label: '✨ تشويق', value: ' (نبرة تشويق وإثارة) ' },
   { label: '💪 ثقة', value: ' (نبرة واثقة وقوية) ' },
@@ -52,15 +47,13 @@ const EMOTION_TAGS = [
   { label: '🎙️ رسمي', value: ' (نبرة رسمية إخبارية) ' },
   { label: '😨 خوف', value: ' (بخوف وتوتر) ' },
   { label: '😠 غضب', value: ' (بغضب وصوت عالي) ' },
-
-  // Physical
   { label: '🤧 كحة', value: ' (كحة) ' },
   { label: '😲 شهقة', value: ' (شهقة) ' },
   { label: '😘 بوسة', value: ' (بوسة) ' },
   { label: '🥱 تثاؤب', value: ' (تثاؤب) ' },
 ];
 
-const PREVIEW_TEXT = "أهلاً بكم في ستوديو مصر. برعاية الجَمَّال للإعلان";
+const PREVIEW_TEXT = "أهلاً بكم في ستوديو مصر. برعاية الجَمَّال للإعلان";
 
 export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang }) => {
   const [text, setText] = useState('');
@@ -70,20 +63,16 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>('p_natural');
   const [customTone, setCustomTone] = useState('');
 
-  // Magic Writer States
   const [scriptTopic, setScriptTopic] = useState('');
   const [scriptLength, setScriptLength] = useState<'SHORT' | 'MEDIUM' | 'LONG'>('MEDIUM');
   const [isScriptLoading, setIsScriptLoading] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
 
-  // Preview States
   const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
   const [previewPlayingId, setPreviewPlayingId] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   
-  // Cache for voice previews to avoid API spam/quota limits
   const previewCache = useRef<Record<string, string>>({});
-
   const processorRef = useRef<VoiceProcessor | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -99,7 +88,6 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
   }, [selectedGender, filteredActors, selectedActorId]);
 
   useEffect(() => {
-    // Initialize audio processor for previews
     processorRef.current = new VoiceProcessor();
     return () => {
       processorRef.current?.stop();
@@ -121,10 +109,9 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
     try {
       const generatedScript = await generateTextScript(scriptTopic, scriptLength, lang);
       setText(generatedScript);
-      setScriptTopic(''); // Clear topic after success
+      setScriptTopic('');
     } catch (e) {
       console.error(e);
-      // Optional: Show error toast
     } finally {
       setIsScriptLoading(false);
     }
@@ -132,7 +119,6 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
   
   const handleEnhanceText = async () => {
     if (!text.trim() || !selectedActorId) return;
-    
     setIsEnhancing(true);
     try {
       const actor = VOICE_ACTORS.find(a => a.id === selectedActorId)!;
@@ -151,15 +137,11 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
         setText(prev => prev + tagValue);
         return;
     }
-
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const currentText = textarea.value;
-
     const newText = currentText.substring(0, start) + tagValue + currentText.substring(end);
     setText(newText);
-
-    // Restore focus and move cursor after the inserted tag
     setTimeout(() => {
         textarea.focus();
         textarea.selectionStart = textarea.selectionEnd = start + tagValue.length;
@@ -170,42 +152,35 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
     e.stopPropagation();
     setPreviewError(null);
 
-    // If currently playing this actor, stop it
     if (previewPlayingId === actor.id) {
        processorRef.current?.stop();
        setPreviewPlayingId(null);
        return;
     }
 
-    if (previewLoadingId) return; // Prevent multiple clicks while loading
-
-    // Stop any other preview
+    if (previewLoadingId) return;
     processorRef.current?.stop();
     setPreviewPlayingId(null);
 
     setPreviewLoadingId(actor.id);
     try {
         let audioUrl = previewCache.current[actor.id];
-
         if (!audioUrl) {
-           // Generate audio on the fly if not cached
-           audioUrl = await generateSpeech(PREVIEW_TEXT, actor, null, ""); // Natural tone
-           previewCache.current[actor.id] = audioUrl; // Cache result
+           audioUrl = await generateSpeech(PREVIEW_TEXT, actor, null, "");
+           previewCache.current[actor.id] = audioUrl;
         }
         
         setPreviewLoadingId(null);
         setPreviewPlayingId(actor.id);
         
         await processorRef.current?.processAndPlay(audioUrl, 1.0, 1.0, () => {
-            setPreviewPlayingId(null); // Reset icon when audio ends
+            setPreviewPlayingId(null);
         });
-
     } catch (error: any) {
         console.error("Preview failed:", error);
         setPreviewLoadingId(null);
         setPreviewPlayingId(null);
         
-        // Show visual error
         const msg = (error.message && error.message.includes('Limit')) 
            ? (lang === 'ar' ? '⚠️ عفشاً، تجاوزت الحد' : '⚠️ Limit Exceeded') 
            : (lang === 'ar' ? '⚠️ خطأ في المعاينة' : '⚠️ Preview Failed');
@@ -216,11 +191,8 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
   };
 
   const handleRandomize = () => {
-    // Random Actor matching gender
     const randomActor = filteredActors[Math.floor(Math.random() * filteredActors.length)];
     setSelectedActorId(randomActor.id);
-    
-    // Random Preset
     const randomPreset = VOICE_PRESETS[Math.floor(Math.random() * VOICE_PRESETS.length)];
     setSelectedCategory(randomPreset.category);
     setSelectedPresetId(randomPreset.id);
@@ -228,66 +200,68 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
   };
 
   const currentTabPresets = VOICE_PRESETS.filter(p => p.category === selectedCategory);
-  // Added STARS between GENERAL and ADS
   const categoryOrder = ['GENERAL', 'STARS', 'ADS', 'EMOTION', 'CHARACTER', 'PROFESSION', 'FAMILY', 'COMEDY'];
 
   return (
-    <div className="w-full pro-panel rounded-3xl overflow-hidden relative border border-border font-sans shadow-2xl transition-colors duration-300">
+    <div className="w-full glass-card overflow-hidden relative shadow-2xl transition-all duration-300">
       
       {/* LUXURY HEADER */}
-      <div className="bg-primary p-8 flex flex-col items-center justify-center border-b border-border relative overflow-hidden transition-colors duration-300">
+      <div className="bg-gradient-to-r from-violet-900/80 via-purple-900/60 to-indigo-900/80 p-8 flex flex-col items-center justify-center border-b border-border relative overflow-hidden transition-colors duration-300">
          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-accent/10 via-transparent to-transparent opacity-50"></div>
+         
+         {/* Floating elements */}
+         <div className="absolute top-4 left-8 text-violet-400/20 text-xl animate-float"><i className="fas fa-music"></i></div>
+         <div className="absolute bottom-4 right-12 text-purple-400/20 text-lg animate-float" style={{ animationDelay: '1s' }}><i className="fas fa-headphones"></i></div>
+         
          <div className="flex items-center gap-4 z-10 relative">
-            <div className="w-12 h-12 rounded-2xl border border-accent flex items-center justify-center bg-accent/10 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-              <i className="fas fa-microphone-lines text-accent text-xl"></i>
+            <div className="w-14 h-14 rounded-2xl border border-accent/50 flex items-center justify-center bg-accent/10 shadow-[0_0_30px_rgba(139,92,246,0.3)] icon-3d">
+              <i className="fas fa-microphone-lines text-accent text-2xl"></i>
             </div>
             <div className="text-center">
-              <h1 className="text-3xl font-bold tracking-tight text-txt-primary">MASRI <span className="text-accent">STUDIO</span></h1>
+              <h1 className="text-3xl font-display font-bold tracking-tight text-white">MASRI <span className="text-gradient">STUDIO</span></h1>
               <div className="flex items-center justify-center gap-2 mt-1">
                 <span className="h-[1px] w-4 bg-accent/50"></span>
-                <p className="text-[10px] text-txt-muted uppercase tracking-[0.2em]">Premium AI Voice Generator</p>
+                <p className="text-[10px] text-violet-300/80 uppercase tracking-[0.2em]">Premium AI Voice Generator</p>
                 <span className="h-[1px] w-4 bg-accent/50"></span>
               </div>
             </div>
          </div>
       </div>
 
-      <div className="p-6 md:p-8 space-y-8 bg-surface transition-colors duration-300">
+      <div className="p-6 md:p-8 space-y-8 transition-colors duration-300">
         <form onSubmit={handleSubmit} className="space-y-8">
           
           {/* 1. GENDER TOGGLE */}
           <div className="flex justify-center">
-            <div className="bg-primary p-1.5 rounded-full border border-border inline-flex shadow-inner">
+            <div className="glass p-1.5 rounded-2xl border border-border inline-flex shadow-lg">
               {(['MALE', 'FEMALE'] as Gender[]).map(g => (
                 <button
                   key={g}
                   type="button"
                   onClick={() => setSelectedGender(g)}
-                  className={`px-10 py-3 rounded-full text-sm font-bold transition-all duration-300 ${
+                  className={`px-8 py-3 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-3 ${
                     selectedGender === g 
-                    ? 'bg-accent text-white shadow-[0_0_20px_rgba(245,158,11,0.4)] scale-100' 
+                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]' 
                     : 'text-txt-muted hover:text-txt-primary hover:bg-highlight'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <i className={`fas ${g === 'MALE' ? 'fa-mars' : 'fa-venus'}`}></i>
-                    <span>{lang === 'ar' ? (g === 'MALE' ? 'رجال' : 'سيدات') : g}</span>
-                  </div>
+                  <i className={`fas ${g === 'MALE' ? 'fa-mars text-lg' : 'fa-venus text-lg'}`}></i>
+                  <span>{lang === 'ar' ? (g === 'MALE' ? 'رجال' : 'سيدات') : g}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* 2. ACTOR SELECTION - REDESIGNED COMPACT */}
+          {/* 2. ACTOR SELECTION */}
           <div>
             <div className="flex items-center justify-between mb-5 px-2 relative">
-               <label className="text-xs font-bold text-accent uppercase tracking-widest">
+               <label className="text-xs font-bold text-accent uppercase tracking-widest flex items-center gap-2">
+                  <i className="fas fa-users text-sm"></i>
                   {lang === 'ar' ? 'اختر المؤدي' : 'Voice Actor'}
                </label>
                
-               {/* PREVIEW ERROR TOAST */}
                {previewError && (
-                 <div className="absolute left-1/2 -translate-x-1/2 -top-8 bg-red-900/90 text-white text-[10px] px-3 py-1 rounded-full border border-red-500/50 shadow-lg whitespace-nowrap animate-pulse z-30">
+                 <div className="absolute left-1/2 -translate-x-1/2 -top-8 glass border-red-500/50 text-red-400 text-[10px] px-3 py-1 rounded-full shadow-lg whitespace-nowrap animate-pulse z-30">
                    {previewError}
                  </div>
                )}
@@ -295,7 +269,7 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
                <button 
                  type="button" 
                  onClick={handleRandomize}
-                 className="text-[10px] text-txt-muted hover:text-accent transition-colors flex items-center gap-1"
+                 className="text-[10px] text-txt-muted hover:text-accent transition-colors flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border hover:border-accent/30"
                >
                  <i className="fas fa-dice"></i> {lang === 'ar' ? 'اختيار عشوائي' : 'Randomize'}
                </button>
@@ -315,25 +289,25 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
                     className="group relative flex flex-col items-center gap-2 transition-all outline-none"
                   >
                     {/* Avatar Circle */}
-                    <div className={`relative w-14 h-14 rounded-full bg-gradient-to-br ${actor.imageColor} shadow-lg flex items-center justify-center transition-all duration-300
+                    <div className={`relative w-14 h-14 rounded-2xl bg-gradient-to-br ${actor.imageColor} shadow-lg flex items-center justify-center transition-all duration-300
                       ${isSelected 
-                        ? 'ring-2 ring-accent ring-offset-2 ring-offset-surface scale-110 grayscale-0' 
+                        ? 'ring-2 ring-accent ring-offset-2 ring-offset-surface scale-110 grayscale-0 shadow-[0_0_20px_rgba(139,92,246,0.3)]' 
                         : 'grayscale-[0.5] opacity-70 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-105'
                       }`}
                     >
-                      <span className="text-lg font-bold text-white/90 drop-shadow-md">{actor.name.charAt(0)}</span>
+                      <span className="text-lg font-bold text-white/90 drop-shadow-md font-display">{actor.name.charAt(0)}</span>
                       
                       {/* Checkmark Badge */}
                       {isSelected && (
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#39ff14] rounded-full border-2 border-surface flex items-center justify-center shadow-sm z-10 shadow-[0_0_10px_rgba(57,255,20,0.5)]">
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 rounded-full border-2 border-surface flex items-center justify-center shadow-sm z-10 shadow-[0_0_10px_rgba(74,222,128,0.5)]">
                            <i className="fas fa-check text-[10px] text-black font-bold"></i>
                         </div>
                       )}
 
-                      {/* PREVIEW BUTTON OVERLAY (Top Left or Right) */}
+                      {/* PREVIEW BUTTON */}
                       <div 
                          onClick={(e) => handlePreview(e, actor)}
-                         className={`absolute -top-1 -left-1 w-6 h-6 rounded-full flex items-center justify-center z-20 shadow-md border border-surface transition-all
+                         className={`absolute -top-1 -left-1 w-6 h-6 rounded-full flex items-center justify-center z-20 shadow-md border-2 border-surface transition-all
                             ${isPreviewPlaying 
                                 ? 'bg-accent text-white scale-110' 
                                 : 'bg-slate-700 text-white hover:bg-accent hover:text-white'
@@ -347,10 +321,9 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
                              <i className={`fas ${isPreviewPlaying ? 'fa-stop' : 'fa-play'} text-[8px] pl-[1px]`}></i>
                          )}
                       </div>
-
                     </div>
                     
-                    {/* Minimal Name Label */}
+                    {/* Name Label */}
                     <div className="text-center w-full">
                       <div className={`text-[10px] font-bold uppercase tracking-wider transition-colors truncate
                         ${isSelected ? 'text-accent' : 'text-txt-muted group-hover:text-txt-secondary'}`}>
@@ -367,7 +340,8 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
 
           {/* 3. TONE SELECTION */}
           <div>
-             <label className={`text-xs font-bold text-accent uppercase tracking-widest mb-4 block ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
+             <label className={`text-xs font-bold text-accent uppercase tracking-widest mb-4 flex items-center gap-2 ${lang === 'ar' ? 'flex-row-reverse justify-start' : ''}`}>
+                <i className="fas fa-sliders text-sm"></i>
                 {lang === 'ar' ? 'النبرة والأداء' : 'Tone & Performance'}
              </label>
 
@@ -378,10 +352,10 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
                     key={cat}
                     type="button"
                     onClick={() => { setSelectedCategory(cat); setCustomTone(''); }}
-                    className={`px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all border backdrop-blur-sm
+                    className={`px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all border
                       ${selectedCategory === cat 
-                        ? 'bg-accent border-accent text-white shadow-lg' 
-                        : 'bg-highlight border-border text-txt-muted hover:bg-highlight/50 hover:text-txt-primary'
+                        ? 'bg-gradient-to-r from-violet-600 to-purple-600 border-accent text-white shadow-lg shadow-purple-500/20' 
+                        : 'glass border-border text-txt-muted hover:text-txt-primary hover:border-accent/30'
                       }`}
                   >
                     {lang === 'ar' ? CATEGORY_LABELS[cat].ar : CATEGORY_LABELS[cat].en}
@@ -399,9 +373,9 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
                       if (e.target.value) setSelectedPresetId(null);
                    }}
                    placeholder={lang === 'ar' ? '✨ اكتب وصفاً خاصاً (مثال: يهمس بخوف شديد)...' : '✨ Describe a custom tone...'}
-                   className={`w-full py-4 px-5 rounded-xl bg-primary border text-sm transition-all shadow-inner
+                   className={`w-full py-4 px-5 rounded-xl glass border text-sm transition-all
                       ${customTone 
-                        ? 'border-accent text-txt-primary shadow-[0_0_15px_rgba(245,158,11,0.1)]' 
+                        ? 'border-accent text-txt-primary shadow-[0_0_15px_rgba(139,92,246,0.1)]' 
                         : 'border-border text-txt-muted focus:border-accent/50 focus:text-txt-primary'
                       } ${lang === 'ar' ? 'text-right' : ''}`}
                 />
@@ -417,18 +391,17 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
                       onClick={() => { setSelectedPresetId(preset.id); setCustomTone(''); }}
                       className={`group p-4 rounded-xl border text-center transition-all duration-200 flex flex-col items-center gap-3 relative overflow-hidden
                         ${selectedPresetId === preset.id
-                          ? 'bg-accent border-accent text-white shadow-[0_0_20px_rgba(245,158,11,0.3)]'
-                          : 'bg-highlight border-border text-txt-muted hover:bg-highlight/80 hover:text-txt-primary'
+                          ? 'bg-gradient-to-br from-violet-600 to-purple-600 border-accent text-white shadow-[0_0_20px_rgba(139,92,246,0.3)]'
+                          : 'glass border-border text-txt-muted hover:text-txt-primary hover:border-accent/30'
                         }`}
                     >
-                      <div className={`text-xl ${selectedPresetId === preset.id ? 'scale-110' : 'group-hover:scale-110'} transition-transform`}>
+                      <div className={`text-xl ${selectedPresetId === preset.id ? 'scale-110' : 'group-hover:scale-110'} transition-transform icon-3d`}>
                         <i className={`fas ${preset.icon}`}></i>
                       </div>
                       <span className="text-[11px] font-bold leading-tight">
                         {lang === 'ar' ? preset.labelAr : preset.label}
                       </span>
                       
-                      {/* Shine effect */}
                       {selectedPresetId === preset.id && (
                         <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent pointer-events-none"></div>
                       )}
@@ -443,53 +416,44 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
           {/* 4. TEXT INPUT AREA & MAGIC WRITER */}
           <div>
              
-             {/* MAGIC WRITER SECTION WITH NEW PROFESSIONAL FRAME */}
+             {/* MAGIC WRITER SECTION */}
              <div className="mb-8 relative group">
-                {/* Gradient Border/Glow Effect */}
                 <div className="absolute -inset-[1px] bg-gradient-to-r from-accent/50 via-transparent to-accent/50 rounded-2xl opacity-30 group-hover:opacity-100 transition-opacity duration-500 blur-sm"></div>
                 
-                <div className="relative rounded-2xl bg-surface border border-white/10 overflow-hidden shadow-2xl">
-                    {/* Decorative Top Bar */}
+                <div className="relative glass-card overflow-hidden shadow-2xl">
                     <div className="h-1 w-full bg-gradient-to-r from-accent via-accent/50 to-accent"></div>
 
                     <div className="p-5 md:p-6 bg-gradient-to-b from-white/5 to-transparent">
-                        {/* Header */}
                         <div className="flex items-center justify-between mb-5">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center border border-accent/20 shadow-[0_0_15px_rgba(139,92,246,0.1)] icon-3d">
                                      <i className="fas fa-wand-magic-sparkles text-accent text-lg"></i>
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-bold text-txt-primary uppercase tracking-widest">{lang === 'ar' ? 'المؤلف السحري' : 'Magic Script Writer'}</h3>
+                                    <h3 className="text-sm font-bold text-txt-primary uppercase tracking-widest font-display">{lang === 'ar' ? 'المؤلف السحري' : 'Magic Script Writer'}</h3>
                                     <p className="text-[10px] text-txt-muted uppercase tracking-wider">{lang === 'ar' ? 'اكتب فكرة وسيب الباقي علينا' : 'AI-Powered Creative Assistant'}</p>
                                 </div>
                             </div>
-                            {/* Optional: Small badge or icon */}
                             <div className="px-2 py-1 rounded-md bg-black/20 border border-white/5 text-[9px] text-txt-muted font-mono hidden sm:block">
                                 AI V2.5
                             </div>
                         </div>
 
-                        {/* Inputs Container */}
                         <div className="flex flex-col gap-4">
-                             {/* Input Field */}
                              <div className="relative">
                                 <input 
                                    type="text" 
                                    value={scriptTopic}
                                    onChange={(e) => setScriptTopic(e.target.value)}
                                    placeholder={lang === 'ar' ? 'اكتب فكرة: اعلان كشري، قصة رعب، رسالة حب...' : 'Topic: Coffee ad, Horror story, Love letter...'}
-                                   className={`w-full bg-black/20 border border-white/10 rounded-xl px-4 py-4 text-sm text-txt-primary focus:border-accent/50 focus:bg-black/40 focus:shadow-[0_0_20px_rgba(245,158,11,0.05)] outline-none transition-all placeholder:text-txt-muted/50 ${lang === 'ar' ? 'text-right' : ''}`}
+                                   className={`w-full bg-black/20 border border-white/10 rounded-xl px-4 py-4 text-sm text-txt-primary focus:border-accent/50 focus:bg-black/40 focus:shadow-[0_0_20px_rgba(139,92,246,0.05)] outline-none transition-all placeholder:text-txt-muted/50 ${lang === 'ar' ? 'text-right' : ''}`}
                                 />
                                 <div className={`absolute top-1/2 -translate-y-1/2 text-txt-muted/30 pointer-events-none ${lang === 'ar' ? 'left-3' : 'right-3'}`}>
                                     <i className="fas fa-keyboard"></i>
                                 </div>
                              </div>
                              
-                             {/* Controls Row */}
                              <div className="flex flex-wrap items-center justify-between gap-3" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-                                 
-                                 {/* Length Selector */}
                                  <div className="flex bg-black/20 p-1 rounded-lg border border-white/5">
                                     {(['SHORT', 'MEDIUM', 'LONG'] as const).map(len => (
                                        <button
@@ -498,7 +462,7 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
                                          onClick={() => setScriptLength(len)}
                                          className={`px-4 py-1.5 text-[10px] font-bold rounded-md transition-all ${
                                              scriptLength === len 
-                                             ? 'bg-accent text-white shadow-md' 
+                                             ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-md' 
                                              : 'text-txt-muted hover:text-white hover:bg-white/5'
                                          }`}
                                        >
@@ -509,15 +473,14 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
                                     ))}
                                  </div>
 
-                                 {/* Action Button */}
                                  <button
                                     type="button"
                                     onClick={handleMagicWrite}
                                     disabled={isScriptLoading || !scriptTopic.trim()}
-                                    className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg ${
+                                    className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg btn-3d ${
                                        !scriptTopic.trim() 
                                        ? 'bg-white/5 text-txt-muted cursor-not-allowed border border-white/5' 
-                                       : 'bg-txt-primary text-primary hover:bg-accent hover:text-white hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] border border-white/10'
+                                       : 'bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] border border-white/10'
                                     }`}
                                  >
                                     {isScriptLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-pen-nib"></i>}
@@ -536,7 +499,7 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
                     key={idx}
                     type="button"
                     onClick={() => setText(phrase)}
-                    className="whitespace-nowrap px-3 py-1.5 rounded-full bg-highlight border border-border text-[10px] text-txt-muted hover:text-accent hover:border-accent/30 transition-colors flex-shrink-0"
+                    className="whitespace-nowrap px-3 py-1.5 rounded-full glass border border-border text-[10px] text-txt-muted hover:text-accent hover:border-accent/30 transition-colors flex-shrink-0"
                   >
                     {phrase}
                   </button>
@@ -550,25 +513,24 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
                   onChange={(e) => setText(e.target.value)}
                   placeholder={lang === 'ar' ? 'اكتب النص هنا...' : 'Type script here...'}
                   rows={4}
-                  className={`w-full p-5 pb-12 rounded-2xl bg-primary border border-border text-txt-primary placeholder-txt-muted focus:border-accent outline-none transition-all resize-none shadow-inner ${lang === 'ar' ? 'text-right' : ''}`}
+                  className={`w-full p-5 pb-12 rounded-2xl glass border border-border text-txt-primary placeholder-txt-muted focus:border-accent outline-none transition-all resize-none ${lang === 'ar' ? 'text-right' : ''}`}
                   dir="rtl"
                 />
                 <div className="absolute bottom-4 left-4 text-[10px] text-txt-muted font-mono">
                    {text.length} chars
                 </div>
 
-                {/* UPDATED ENHANCE BUTTON - ICON ONLY */}
                 <button
                   type="button"
                   onClick={handleEnhanceText}
                   disabled={!text.trim() || isEnhancing || !selectedActorId}
                   title={lang === 'ar' ? 'تحسين النص باستخدام الذكاء الاصطناعي' : 'Enhance text with AI'}
-                  className={`absolute bottom-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-sm transition-all shadow-lg hover:scale-110
+                  className={`absolute bottom-4 right-4 w-9 h-9 flex items-center justify-center rounded-xl text-sm transition-all shadow-lg hover:scale-110 btn-3d
                      ${!text.trim() || isEnhancing
-                       ? 'bg-surface text-txt-muted cursor-not-allowed border border-border'
+                       ? 'bg-highlight text-txt-muted cursor-not-allowed border border-border'
                        : isEnhancing 
-                         ? 'bg-accent text-white animate-pulse' 
-                         : 'bg-accent text-white hover:bg-accent-dim shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+                         ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white animate-pulse' 
+                         : 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]'
                      }`}
                 >
                   {isEnhancing ? (
@@ -579,9 +541,10 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
                 </button>
              </div>
              
-             {/* EMOTION TAGS SHORTCUTS */}
+             {/* EMOTION TAGS */}
              <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-                 <span className="text-[10px] font-bold text-accent shrink-0 uppercase tracking-widest px-1">
+                 <span className="text-[10px] font-bold text-accent shrink-0 uppercase tracking-widest px-1 flex items-center gap-1">
+                     <i className="fas fa-face-grin-stars"></i>
                      {lang === 'ar' ? 'انفعالات:' : 'Emotions:'}
                  </span>
                  {EMOTION_TAGS.map((tag, idx) => (
@@ -589,7 +552,7 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
                         key={idx}
                         type="button"
                         onClick={() => insertAtCursor(tag.value)}
-                        className="whitespace-nowrap px-3 py-1 rounded-full bg-surface border border-border text-[10px] font-bold text-txt-secondary hover:bg-accent hover:text-white hover:border-accent transition-all shrink-0"
+                        className="whitespace-nowrap px-3 py-1 rounded-full glass border border-border text-[10px] font-bold text-txt-secondary hover:bg-accent hover:text-white hover:border-accent transition-all shrink-0"
                      >
                         {tag.label}
                      </button>
@@ -600,10 +563,10 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
           <button
             type="submit"
             disabled={isLoading || !text.trim()}
-            className={`w-full py-5 rounded-xl font-bold text-sm tracking-[3px] uppercase transition-all shadow-xl flex items-center justify-center gap-3 relative overflow-hidden group
+            className={`w-full py-5 rounded-2xl font-bold text-sm tracking-[3px] uppercase transition-all shadow-xl flex items-center justify-center gap-3 relative overflow-hidden group btn-3d
                ${isLoading || !text.trim()
                ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-               : 'bg-accent text-white hover:bg-accent-dim hover:shadow-[0_0_30px_rgba(245,158,11,0.4)]'
+               : 'bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:shadow-[0_0_30px_rgba(139,92,246,0.4)]'
             }`}
           >
             {isLoading ? (
