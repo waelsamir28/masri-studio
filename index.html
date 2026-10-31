@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MASRI Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Readex Pro', 'sans-serif'],
+            },
+            colors: {
+              primary: 'var(--bg-primary)',     // Main Background
+              surface: 'var(--bg-surface)',     // Cards, Panels
+              highlight: 'var(--bg-highlight)', // Inputs, hover states
+              border: 'var(--border-color)',
+              
+              txt: {
+                  primary: 'var(--text-primary)',
+                  secondary: 'var(--text-secondary)',
+                  muted: 'var(--text-muted)'
+              },
+              
+              accent: {
+                  DEFAULT: 'var(--color-accent)',
+                  dim: 'var(--color-accent-dim)',
+                  glow: 'var(--color-accent-glow)'
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+      :root {
+        /* Dark Mode (Default) - ORANGE/AMBER */
+        --bg-primary: #020617;
+        --bg-surface: #0f172a;
+        --bg-highlight: rgba(255, 255, 255, 0.05);
+        --border-color: rgba(255, 255, 255, 0.1);
+        
+        --text-primary: #ffffff;
+        --text-secondary: #94a3b8; /* Slate 400 */
+        --text-muted: #64748b; /* Slate 500 */
+
+        --color-accent: #f59e0b;
+        --color-accent-dim: #b45309;
+        --color-accent-glow: rgba(245, 158, 11, 0.2);
+      }
+
+      .light-mode {
+        /* Light Mode - SKY BLUE/CYAN */
+        --bg-primary: #f0f9ff; /* Very Light Sky */
+        --bg-surface: #ffffff;
+        --bg-highlight: rgba(14, 165, 233, 0.08); /* Sky blue tint */
+        --border-color: rgba(14, 165, 233, 0.2);
+
+        --text-primary: #0c4a6e; /* Sky 900 */
+        --text-secondary: #0369a1; /* Sky 700 */
+        --text-muted: #64748b; /* Slate 500 */
+
+        --color-accent: #0ea5e9; /* Sky 500 */
+        --color-accent-dim: #0284c7; /* Sky 600 */
+        --color-accent-glow: rgba(14, 165, 233, 0.2);
+      }
+
+      body {
+        font-family: 'Readex Pro', sans-serif !important;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        transition: background-color 0.3s ease, color 0.3s ease;
+        min-height: 100vh;
+      }
+      
+      /* Subtle pattern for both modes */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-image: radial-gradient(circle at 50% 0%, var(--color-accent-glow) 0%, transparent 40%);
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .dir-rtl {
+        direction: rtl;
+      }
+
+      /* Luxury Glass Panel */
+      .pro-panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        /* backdrop-filter removed in light mode to avoid muddiness, handled via rgba if needed, 
+           but here we rely on solid colors for better contrast in light mode */
+      }
+      
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg-primary); 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--text-muted); 
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--color-accent); 
+      }
+
+      /* Animations */
+      @keyframes bounce-in {
+        0% { transform: translate(-50%, -100%); opacity: 0; }
+        60% { transform: translate(-50%, 10%); opacity: 1; }
+        100% { transform: translate(-50%, 0); }
+      }
+      .animate-bounce-in {
+        animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      }
+
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
