@@ -2,6 +2,17 @@
 import { GoogleGenAI, GenerateContentResponse, Modality } from "@google/genai";
 import { VoicePreset, VoiceActor } from "../types";
 
+// Get API key - supports both Vite (import.meta.env) and Node (process.env)
+const getApiKey = (): string => {
+  // Try Vite env first
+  const viteKey = (import.meta.env as any)?.VITE_GEMINI_API_KEY;
+  // Try process.env for older setups
+  const nodeKey = process.env?.GEMINI_API_KEY || process.env?.API_KEY;
+  // Try localStorage as fallback for browser input
+  const storedKey = localStorage.getItem('masri-gemini-api-key');
+  return viteKey || nodeKey || storedKey || '';
+};
+
 // Helper to convert PCM to WAV
 export const pcmToWav = (pcmData: Uint8Array, sampleRate: number = 24000): Blob => {
   const numChannels = 1;
@@ -73,7 +84,9 @@ export const generateTextScript = async (
   length: 'SHORT' | 'MEDIUM' | 'LONG',
   lang: 'en' | 'ar'
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("API Key is missing. Please set VITE_GEMINI_API_KEY in your environment variables.");
+  const ai = new GoogleGenAI({ apiKey });
 
   const lengthInstruction = {
     'SHORT': '1-2 sentences, catchy and punchy.',
@@ -115,7 +128,9 @@ export const enhanceScriptWithActor = async (
   actor: VoiceActor,
   lang: 'en' | 'ar'
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey2 = getApiKey();
+  if (!apiKey2) throw new Error("API Key is missing. Please set VITE_GEMINI_API_KEY in your environment variables.");
+  const ai = new GoogleGenAI({ apiKey: apiKey2 });
 
   const prompt = `
     Rewrite and ENHANCE the following text for a cinematic voice performance in Egyptian Arabic.
@@ -152,7 +167,9 @@ export const generateSpeech = async (
   preset: VoicePreset | null,
   customTone: string
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey3 = getApiKey();
+  if (!apiKey3) throw new Error("API Key is missing. Please set VITE_GEMINI_API_KEY in your environment variables.");
+  const ai = new GoogleGenAI({ apiKey: apiKey3 });
   const geminiModelName = actor.geminiModel;
 
   let styleDescription = "Natural";
