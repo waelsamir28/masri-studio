@@ -1,13 +1,18 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { VoicePreset, VOICE_PRESETS, VOICE_ACTORS, VoiceActor, Gender } from '../types';
+import { VoicePreset, VOICE_PRESETS, VOICE_ACTORS, VoiceActor, Gender, GeneratedSpeech } from '../types';
 import { generateTextScript, enhanceScriptWithActor, generateSpeech } from '../services/geminiService';
 import { VoiceProcessor } from '../services/audioMixer';
+import { TemplatesModal } from './TemplatesModal';
+import { BatchGenerate } from './BatchGenerate';
+import { GenerationTimer } from './GenerationTimer';
+import { TextTemplate } from '../services/templates';
 
 interface VoiceFormProps {
   onSubmit: (text: string, actor: VoiceActor, preset: VoicePreset | null, customTone: string) => void;
   isLoading: boolean;
   lang: 'en' | 'ar';
+  onBatchGenerated?: (speeches: GeneratedSpeech[]) => void;
 }
 
 const CATEGORY_LABELS: Record<string, { en: string; ar: string }> = {
@@ -55,7 +60,7 @@ const EMOTION_TAGS = [
 
 const PREVIEW_TEXT = "أهلاً بكم في ستوديو مصر. برعاية الجَمَّال للإعلان";
 
-export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang }) => {
+export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang, onBatchGenerated }) => {
   const [text, setText] = useState('');
   const [selectedGender, setSelectedGender] = useState<Gender>('MALE');
   const [selectedActorId, setSelectedActorId] = useState<string>('');
@@ -71,6 +76,9 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
   const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
   const [previewPlayingId, setPreviewPlayingId] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  
+  // New modals
+  const [showTemplates, setShowTemplates] = useState(false);
   
   const previewCache = useRef<Record<string, string>>({});
   const processorRef = useRef<VoiceProcessor | null>(null);
@@ -197,6 +205,13 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
     setSelectedCategory(randomPreset.category);
     setSelectedPresetId(randomPreset.id);
     setCustomTone('');
+  };
+
+  const handleTemplateSelect = (template: TextTemplate) => {
+    setText(template.text);
+    if (template.suggestedTone) {
+      setCustomTone(template.suggestedTone);
+    }
   };
 
   const currentTabPresets = VOICE_PRESETS.filter(p => p.category === selectedCategory);
@@ -558,6 +573,26 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
                      </button>
                  ))}
              </div>
+
+             {/* Action Bar: Templates + Batch + Timer */}
+             <div className="mt-4 flex flex-wrap items-center gap-2" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+                <button
+                  type="button"
+                  onClick={() => setShowTemplates(true)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold glass border border-border text-txt-secondary hover:text-accent hover:border-accent/30 transition-all flex items-center gap-2 btn-3d"
+                >
+                  <i className="fas fa-file-lines"></i>
+                  {lang === 'ar' ? 'قوالب جاهزة' : 'Templates'}
+                </button>
+
+                <BatchGenerate 
+                  text={text} 
+                  lang={lang} 
+                  onGenerated={onBatchGenerated || (() => {})} 
+                />
+
+                <GenerationTimer isActive={isLoading} />
+             </div>
           </div>
 
           <button
@@ -582,6 +617,14 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang 
 
         </form>
       </div>
+
+      {/* Templates Modal */}
+      <TemplatesModal
+        isOpen={showTemplates}
+        onClose={() => setShowTemplates(false)}
+        onSelect={handleTemplateSelect}
+        lang={lang}
+      />
     </div>
   );
 };

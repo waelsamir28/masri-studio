@@ -5,8 +5,15 @@ import { LoginScreen } from './components/LoginScreen';
 import { AdminPanel, AppSettings } from './components/AdminPanel';
 import { Navbar } from './components/Navbar';
 import { HomePage } from './components/HomePage';
+import { ToastContainer } from './components/ToastContainer';
 import { GeneratedSpeech, GenerationState, VoicePreset, VoiceActor } from './types';
 import { generateSpeech } from './services/geminiService';
+import { 
+  requestNotificationPermission, 
+  showBrowserNotification, 
+  addToast, 
+  playNotificationSound 
+} from './services/notificationService';
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
@@ -21,7 +28,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     { id: 'home', label: 'Home', labelAr: 'الرئيسية', icon: 'fa-home', visible: true },
     { id: 'studio', label: 'Studio', labelAr: 'الاستوديو', icon: 'fa-microphone-lines', visible: true },
     { id: 'history', label: 'History', labelAr: 'السجل', icon: 'fa-clock-rotate-left', visible: true },
-    { id: 'favorites', label: 'Favorites', labelAr: 'المفضلة', icon: 'fa-heart', visible: true },
+    { id: 'library', label: 'Library', labelAr: 'المكتبة', icon: 'fa-book', visible: true },
   ]
 };
 
@@ -34,6 +41,7 @@ const App: React.FC = () => {
   // App State
   const [status, setStatus] = useState<GenerationState>(GenerationState.IDLE);
   const [history, setHistory] = useState<GeneratedSpeech[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [lang, setLang] = useState<'en' | 'ar'>('ar');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -66,6 +74,16 @@ const App: React.FC = () => {
     if (savedHistory) {
       try { setHistory(JSON.parse(savedHistory)); } catch(e) {}
     }
+
+    const savedFavorites = localStorage.getItem('masri-favorites');
+    if (savedFavorites) {
+      try { setFavorites(JSON.parse(savedFavorites)); } catch(e) {}
+    }
+
+    // Request notification permission after login
+    if (savedUser) {
+      requestNotificationPermission();
+    }
   }, []);
 
   // Apply accent color
@@ -84,14 +102,33 @@ const App: React.FC = () => {
   // Save history to localStorage
   useEffect(() => {
     if (history.length > 0) {
-      localStorage.setItem('masri-history', JSON.stringify(history.slice(0, 50)));
+      localStorage.setItem('masri-history', JSON.stringify(history.slice(0, 100)));
     }
   }, [history]);
+
+  // Save favorites to localStorage
+  useEffect(() => {
+    localStorage.setItem('masri-favorites', JSON.stringify(favorites));
+  }, [favorites]);
+
+  // Register Service Worker for PWA
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(err => {
+        console.log('SW registration failed:', err);
+      });
+    }
+  }, []);
 
   const handleLogin = (username: string) => {
     setIsAuthenticated(true);
     setCurrentUser(username);
     setIsAdmin(username === 'admin');
+    requestNotificationPermission();
+    addToast('success', 
+      lang === 'ar' ? 'مرحباً!' : 'Welcome!',
+      lang === 'ar' ? `أهلاً ${username} في ستوديو مصر` : `Welcome ${username} to MASRI Studio`
+    );
   };
 
   const handleLogout = () => {
@@ -134,11 +171,26 @@ const App: React.FC = () => {
     }
   };
 
+  const toggleFavorite = (id: string) => {
+    setFavorites(prev => 
+      prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
+    );
+  };
+
   const handleGenerate = async (text: string, actor: VoiceActor, preset: VoicePreset | null, customTone: string) => {
     setStatus(GenerationState.GENERATING);
     setErrorMessage(null);
+    
+    addToast('info', 
+      lang === 'ar' ? 'جاري التوليد...' : 'Generating...',
+      lang === 'ar' ? `يتم توليد الصوت بصوت ${lang === 'ar' ? actor.nameAr : actor.name}` : `Generating with ${actor.name}'s voice`
+    );
+
     try {
+      const startTime = Date.now();
       const audioUrl = await generateSpeech(text, actor, preset, customTone);
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      
       const newSpeech: GeneratedSpeech = {
         id: Date.now().toString(),
         text,
@@ -150,16 +202,35 @@ const App: React.FC = () => {
       };
       setHistory(prev => [newSpeech, ...prev]);
       setStatus(GenerationState.COMPLETED);
+      
+      // Success notification
+      const successMsg = lang === 'ar' 
+        ? `تم توليد الصوت بنجاح! (${elapsed} ثانية)` 
+        : `Voice generated successfully! (${elapsed}s)`;
+      
+      addToast('success', lang === 'ar' ? 'اكتمل التوليد ✓' : 'Generation Complete ✓', successMsg);
+      showBrowserNotification('MASRI Studio', successMsg);
+      playNotificationSound('success');
+      
     } catch (err: any) {
       console.error(err);
       setStatus(GenerationState.ERROR);
       setErrorMessage(err.message || "An unexpected error occurred.");
+      
+      addToast('error', lang === 'ar' ? 'خطأ!' : 'Error!', err.message || 'Generation failed');
+      playNotificationSound('error');
+      
       setTimeout(() => setErrorMessage(null), 7000);
     }
   };
 
+  const handleBatchGenerated = (speeches: GeneratedSpeech[]) => {
+    setHistory(prev => [...speeches, ...prev]);
+  };
+
   const handleDelete = (id: string) => {
     setHistory(prev => prev.filter(item => item.id !== id));
+    setFavorites(prev => prev.filter(f => f !== id));
   };
 
   // Show Login Screen if not authenticated
@@ -184,6 +255,9 @@ const App: React.FC = () => {
   return (
     <div className={`min-h-screen flex flex-col ${lang === 'ar' ? 'dir-rtl' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       
+      {/* Toast Notifications */}
+      <ToastContainer />
+
       {/* Error Banner */}
       {errorMessage && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-lg animate-bounce-in-custom">
@@ -233,6 +307,7 @@ const App: React.FC = () => {
               onSubmit={handleGenerate} 
               isLoading={status === GenerationState.GENERATING} 
               lang={lang}
+              onBatchGenerated={handleBatchGenerated}
             />
           </div>
         )}
@@ -241,10 +316,10 @@ const App: React.FC = () => {
         {currentPage === 'history' && (
           <div className="w-full max-w-3xl mx-auto animate-fade-in">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center icon-3d">
                 <i className="fas fa-clock-rotate-left text-accent"></i>
               </div>
-              <div>
+              <div className="flex-1">
                 <h2 className="text-xl font-display font-bold text-txt-primary">
                   {lang === 'ar' ? 'السجل' : 'History'}
                 </h2>
@@ -253,7 +328,13 @@ const App: React.FC = () => {
                 </p>
               </div>
             </div>
-            <ResultsView history={history} onDelete={handleDelete} lang={lang} />
+            <ResultsView 
+              history={history} 
+              onDelete={handleDelete} 
+              lang={lang} 
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+            />
             {history.length === 0 && (
               <div className="glass-card p-12 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-highlight flex items-center justify-center mx-auto mb-4">
@@ -274,30 +355,51 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Favorites Page */}
-        {currentPage === 'favorites' && (
+        {/* Library/Favorites Page */}
+        {currentPage === 'library' && (
           <div className="w-full max-w-3xl mx-auto animate-fade-in">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                <i className="fas fa-heart text-accent"></i>
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center icon-3d">
+                <i className="fas fa-book text-accent"></i>
               </div>
-              <div>
+              <div className="flex-1">
                 <h2 className="text-xl font-display font-bold text-txt-primary">
-                  {lang === 'ar' ? 'المفضلة' : 'Favorites'}
+                  {lang === 'ar' ? 'مكتبتي' : 'My Library'}
                 </h2>
                 <p className="text-xs text-txt-muted">
-                  {lang === 'ar' ? 'تسجيلاتك المحفوظة' : 'Your saved recordings'}
+                  {lang === 'ar' ? `${favorites.length} مفضلة` : `${favorites.length} favorites`}
                 </p>
               </div>
             </div>
-            <div className="glass-card p-12 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-highlight flex items-center justify-center mx-auto mb-4">
-                <i className="fas fa-heart text-red-400/50 text-2xl"></i>
+            
+            {favorites.length > 0 ? (
+              <ResultsView 
+                history={history.filter(h => favorites.includes(h.id))} 
+                onDelete={handleDelete} 
+                lang={lang}
+                favorites={favorites}
+                onToggleFavorite={toggleFavorite}
+              />
+            ) : (
+              <div className="glass-card p-12 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-highlight flex items-center justify-center mx-auto mb-4">
+                  <i className="fas fa-book-open text-accent/50 text-2xl"></i>
+                </div>
+                <p className="text-txt-muted text-sm mb-2">
+                  {lang === 'ar' ? 'مكتبتك فاضية' : 'Your library is empty'}
+                </p>
+                <p className="text-txt-muted text-xs">
+                  {lang === 'ar' ? 'اضغط على أيقونة القلب في أي تسجيل لإضافته لمكتبتك' : 'Press the heart icon on any recording to add it to your library'}
+                </p>
+                <button
+                  onClick={() => setCurrentPage('history')}
+                  className="mt-4 px-6 py-2 rounded-xl bg-accent/10 text-accent text-sm font-bold hover:bg-accent/20 transition-all"
+                >
+                  <i className="fas fa-clock-rotate-left ml-2"></i>
+                  {lang === 'ar' ? 'عرض السجل' : 'View History'}
+                </button>
               </div>
-              <p className="text-txt-muted text-sm">
-                {lang === 'ar' ? 'اضغط على القلب في أي تسجيل لإضافته للمفضلة' : 'Press the heart on any recording to add it to favorites'}
-              </p>
-            </div>
+            )}
           </div>
         )}
       </main>

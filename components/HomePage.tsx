@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface HomePageProps {
   lang: 'en' | 'ar';
@@ -8,25 +8,61 @@ interface HomePageProps {
 }
 
 export const HomePage: React.FC<HomePageProps> = ({ lang, bannerUrl, appName, onNavigate }) => {
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallPrompt(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setShowInstallPrompt(false);
+      }
+      setDeferredPrompt(null);
+    }
+  };
+
   return (
     <div className="animate-fade-in">
       {/* Banner Section */}
       <div className="relative w-full rounded-3xl overflow-hidden mb-8 border border-border shadow-2xl">
         {bannerUrl ? (
-          <img 
-            src={bannerUrl} 
-            alt="Banner" 
-            className="w-full h-48 sm:h-64 md:h-80 object-cover"
-          />
+          <div className="relative">
+            <img 
+              src={bannerUrl} 
+              alt="Banner" 
+              className="w-full h-48 sm:h-64 md:h-80 object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white mb-2 drop-shadow-lg">
+                {appName || 'MASRI STUDIO'}
+              </h1>
+              <p className="text-white/80 text-sm sm:text-base max-w-lg">
+                {lang === 'ar' 
+                  ? 'أقوى استوديو صوتي بالذكاء الاصطناعي في مصر'
+                  : 'The Most Powerful AI Voice Studio in Egypt'
+                }
+              </p>
+            </div>
+          </div>
         ) : (
           <div className="w-full h-48 sm:h-64 md:h-80 bg-gradient-to-br from-violet-900 via-purple-900 to-indigo-900 relative overflow-hidden">
-            {/* Animated Background Elements */}
             <div className="absolute inset-0">
               <div className="absolute top-10 right-10 w-40 h-40 bg-violet-500/20 rounded-full blur-3xl animate-float"></div>
               <div className="absolute bottom-10 left-10 w-60 h-60 bg-blue-500/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div>
               
-              {/* Floating Music Notes */}
               <div className="absolute top-8 left-[15%] text-violet-300/40 text-3xl animate-float" style={{ animationDelay: '0.5s' }}>
                 <i className="fas fa-music"></i>
               </div>
@@ -36,26 +72,8 @@ export const HomePage: React.FC<HomePageProps> = ({ lang, bannerUrl, appName, on
               <div className="absolute bottom-12 left-[30%] text-blue-300/40 text-4xl animate-float" style={{ animationDelay: '2s' }}>
                 <i className="fas fa-microphone-lines"></i>
               </div>
-              <div className="absolute bottom-8 right-[15%] text-indigo-300/40 text-2xl animate-float" style={{ animationDelay: '0.8s' }}>
-                <i className="fas fa-waveform-lines"></i>
-              </div>
-              
-              {/* Waveform decoration */}
-              <div className="absolute bottom-0 left-0 right-0 h-20 flex items-end justify-center gap-[2px] opacity-20">
-                {Array.from({ length: 60 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-1 bg-gradient-to-t from-violet-500 to-purple-300 rounded-full"
-                    style={{ 
-                      height: `${Math.random() * 100}%`,
-                      animationDelay: `${i * 0.05}s`
-                    }}
-                  ></div>
-                ))}
-              </div>
             </div>
 
-            {/* Banner Content */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 z-10">
               <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center mb-4 icon-3d shadow-2xl">
                 <i className="fas fa-microphone-lines text-white text-2xl"></i>
@@ -69,26 +87,49 @@ export const HomePage: React.FC<HomePageProps> = ({ lang, bannerUrl, appName, on
                   : 'The Most Powerful AI Voice Studio in Egypt - Real Voices with a Magic Touch'
                 }
               </p>
-              <div className="flex items-center gap-2 mt-4">
-                <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-violet-400"></div>
-                <span className="text-violet-300 text-[10px] uppercase tracking-[0.3em]">Premium AI Voice</span>
-                <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-violet-400"></div>
-              </div>
             </div>
           </div>
         )}
-        
-        {/* Gradient Overlay for readability */}
-        {!bannerUrl && <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none"></div>}
       </div>
 
-      {/* Quick Features Grid */}
+      {/* Install PWA Banner */}
+      {showInstallPrompt && (
+        <div className="glass-card p-4 mb-6 flex items-center gap-4 border-accent/30 animate-slide-down">
+          <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center shrink-0 icon-3d">
+            <i className="fas fa-download text-accent text-xl"></i>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-txt-primary">
+              {lang === 'ar' ? 'ثبّت التطبيق على جهازك!' : 'Install the app on your device!'}
+            </p>
+            <p className="text-[10px] text-txt-muted">
+              {lang === 'ar' ? 'استخدم التطبيق كتطبيق حقيقي بدون متصفح' : 'Use the app as a real app without a browser'}
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={handleInstall}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white text-xs font-bold btn-3d"
+            >
+              {lang === 'ar' ? 'تثبيت' : 'Install'}
+            </button>
+            <button
+              onClick={() => setShowInstallPrompt(false)}
+              className="px-3 py-2 rounded-xl bg-highlight border border-border text-txt-muted text-xs"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Features Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
           { icon: 'fa-microphone-lines', label: lang === 'ar' ? '٢٠ مؤدي صوتي' : '20 Voice Actors', color: 'from-violet-500 to-purple-600', desc: lang === 'ar' ? 'أصوات متنوعة' : 'Diverse voices' },
           { icon: 'fa-wand-magic-sparkles', label: lang === 'ar' ? 'مؤلف سحري' : 'Magic Writer', color: 'from-blue-500 to-cyan-600', desc: lang === 'ar' ? 'كتابة بالذكاء الاصطناعي' : 'AI Writing' },
           { icon: 'fa-sliders', label: lang === 'ar' ? '٨٠+ نبرة' : '80+ Tones', color: 'from-amber-500 to-orange-600', desc: lang === 'ar' ? 'تحكم كامل' : 'Full control' },
-          { icon: 'fa-download', label: lang === 'ar' ? 'تحميل مباشر' : 'Direct Download', color: 'from-emerald-500 to-green-600', desc: lang === 'ar' ? 'جودة عالية' : 'High quality' },
+          { icon: 'fa-file-lines', label: lang === 'ar' ? 'قوالب جاهزة' : 'Templates', color: 'from-emerald-500 to-green-600', desc: lang === 'ar' ? 'نصوص معدّة مسبقاً' : 'Pre-made texts' },
         ].map((feature, idx) => (
           <div 
             key={idx} 
@@ -102,6 +143,34 @@ export const HomePage: React.FC<HomePageProps> = ({ lang, bannerUrl, appName, on
             <p className="text-[10px] text-txt-muted">{feature.desc}</p>
           </div>
         ))}
+      </div>
+
+      {/* New Features Showcase */}
+      <div className="glass-card p-6 mb-8">
+        <h2 className="text-lg font-display font-bold text-txt-primary mb-4 flex items-center gap-2">
+          <i className="fas fa-sparkles text-accent"></i>
+          {lang === 'ar' ? 'مميزات جديدة' : 'New Features'}
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {[
+            { icon: 'fa-bell', label: lang === 'ar' ? 'إشعارات ذكية' : 'Smart Notifications', desc: lang === 'ar' ? 'تنبيه عند اكتمال التوليد' : 'Alert when generation completes' },
+            { icon: 'fa-layer-group', label: lang === 'ar' ? 'توليد متعدد' : 'Batch Generation', desc: lang === 'ar' ? 'نفس النص بأصوات مختلفة' : 'Same text with different voices' },
+            { icon: 'fa-clock', label: lang === 'ar' ? 'مؤقت التوليد' : 'Generation Timer', desc: lang === 'ar' ? 'عداد لوقت المعالجة' : 'Processing time counter' },
+            { icon: 'fa-share-nodes', label: lang === 'ar' ? 'مشاركة مباشرة' : 'Direct Sharing', desc: lang === 'ar' ? 'واتساب، تيليجرام، فيسبوك' : 'WhatsApp, Telegram, Facebook' },
+            { icon: 'fa-heart', label: lang === 'ar' ? 'مكتبة الأصوات' : 'Voice Library', desc: lang === 'ar' ? 'احفظ تسجيلاتك المفضلة' : 'Save your favorite recordings' },
+            { icon: 'fa-mobile-screen', label: lang === 'ar' ? 'تطبيق موبايل' : 'Mobile App', desc: lang === 'ar' ? 'ثبّته على جهازك' : 'Install on your device' },
+          ].map((feat, idx) => (
+            <div key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-highlight/50 border border-border/50">
+              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                <i className={`fas ${feat.icon} text-accent text-xs`}></i>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-txt-primary">{feat.label}</p>
+                <p className="text-[9px] text-txt-muted">{feat.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* CTA Section */}

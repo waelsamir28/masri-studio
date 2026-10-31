@@ -2,17 +2,21 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { GeneratedSpeech } from '../types';
 import { VoiceProcessor } from '../services/audioMixer';
+import { ShareModal } from './ShareModal';
 
 interface ResultsViewProps {
   history: GeneratedSpeech[];
   onDelete: (id: string) => void;
   lang: 'en' | 'ar';
+  favorites?: string[];
+  onToggleFavorite?: (id: string) => void;
 }
 
-export const ResultsView: React.FC<ResultsViewProps> = ({ history, onDelete, lang }) => {
+export const ResultsView: React.FC<ResultsViewProps> = ({ history, onDelete, lang, favorites = [], onToggleFavorite }) => {
   const processorRef = useRef<VoiceProcessor | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [shareModal, setShareModal] = useState<{ isOpen: boolean; speech: GeneratedSpeech | null }>({ isOpen: false, speech: null });
   const animationFrameRef = useRef<number>();
   
   useEffect(() => {
@@ -100,6 +104,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ history, onDelete, lan
     <div className="flex flex-col gap-4 w-full mt-4">
       {history.map((speech) => {
         const isPlaying = playingId === speech.id;
+        const isFavorite = favorites.includes(speech.id);
         
         return (
           <div 
@@ -135,7 +140,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ history, onDelete, lan
              </div>
 
              {/* Visualizer & Controls Row */}
-             <div className="flex items-center gap-4 mt-2 p-2 rounded-xl glass border border-border">
+             <div className="flex items-center gap-3 mt-2 p-2 rounded-xl glass border border-border">
                 
                 {/* Visualizer Area */}
                 <div className="flex-1 h-12 relative rounded-lg overflow-hidden bg-highlight">
@@ -149,36 +154,76 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ history, onDelete, lan
                 </div>
 
                 {/* Buttons */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Play/Stop */}
                     <button 
                       onClick={() => handlePlay(speech)}
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-lg btn-3d ${
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all btn-3d ${
                         isPlaying 
                         ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white' 
                         : 'glass border border-border text-txt-muted hover:text-accent hover:border-accent/30'
                       }`}
                     >
-                       <i className={`fas ${isPlaying ? 'fa-stop' : 'fa-play pl-1'}`}></i>
+                       <i className={`fas ${isPlaying ? 'fa-stop' : 'fa-play pl-0.5'} text-xs`}></i>
                     </button>
 
+                    {/* Download */}
                     <button 
                       onClick={() => handleDownload(speech)}
-                      className="w-10 h-10 rounded-xl glass border border-border text-txt-muted hover:text-accent hover:border-accent/30 flex items-center justify-center transition-all btn-3d"
+                      className="w-9 h-9 rounded-xl glass border border-border text-txt-muted hover:text-accent hover:border-accent/30 flex items-center justify-center transition-all btn-3d"
+                      title={lang === 'ar' ? 'تحميل' : 'Download'}
                     >
-                       <i className="fas fa-download"></i>
+                       <i className="fas fa-download text-xs"></i>
                     </button>
 
+                    {/* Share */}
+                    <button 
+                      onClick={() => setShareModal({ isOpen: true, speech })}
+                      className="w-9 h-9 rounded-xl glass border border-border text-txt-muted hover:text-blue-400 hover:border-blue-400/30 flex items-center justify-center transition-all btn-3d"
+                      title={lang === 'ar' ? 'مشاركة' : 'Share'}
+                    >
+                       <i className="fas fa-share-nodes text-xs"></i>
+                    </button>
+
+                    {/* Favorite */}
+                    {onToggleFavorite && (
+                      <button 
+                        onClick={() => onToggleFavorite(speech.id)}
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all btn-3d border ${
+                          isFavorite 
+                            ? 'bg-red-500/10 border-red-500/30 text-red-400' 
+                            : 'glass border-border text-txt-muted hover:text-red-400 hover:border-red-400/30'
+                        }`}
+                        title={lang === 'ar' ? 'إضافة للمفضلة' : 'Add to Favorites'}
+                      >
+                         <i className={`fas fa-heart text-xs ${isFavorite ? 'fa-beat' : ''}`}></i>
+                      </button>
+                    )}
+
+                    {/* Delete */}
                     <button 
                       onClick={() => onDelete(speech.id)}
-                      className="w-10 h-10 flex items-center justify-center rounded-xl text-txt-muted hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
+                      className="w-9 h-9 flex items-center justify-center rounded-xl text-txt-muted hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
+                      title={lang === 'ar' ? 'حذف' : 'Delete'}
                     >
-                       <i className="fas fa-trash-alt"></i>
+                       <i className="fas fa-trash-alt text-xs"></i>
                     </button>
                 </div>
              </div>
           </div>
         );
       })}
+
+      {/* Share Modal */}
+      {shareModal.speech && (
+        <ShareModal
+          isOpen={shareModal.isOpen}
+          onClose={() => setShareModal({ isOpen: false, speech: null })}
+          text={shareModal.speech.text}
+          actorName={lang === 'ar' ? shareModal.speech.actor.nameAr : shareModal.speech.actor.name}
+          lang={lang}
+        />
+      )}
     </div>
   );
 };
