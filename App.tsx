@@ -5,6 +5,10 @@ import { LoginScreen } from './components/LoginScreen';
 import { AdminPanel, AppSettings } from './components/AdminPanel';
 import { Navbar } from './components/Navbar';
 import { HomePage } from './components/HomePage';
+import { SplashScreen } from './components/SplashScreen';
+import { AudioPlayerModal } from './components/AudioPlayerModal';
+import { InstallPrompt } from './components/InstallPrompt';
+import { AppInfoModal } from './components/AppInfoModal';
 import { ToastContainer } from './components/ToastContainer';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { GeneratedSpeech, GenerationState, VoicePreset, VoiceActor } from './types';
@@ -42,6 +46,7 @@ const applyTheme = (themeKey: string) => {
 };
 
 const App: React.FC = () => {
+  const [showSplash, setShowSplash] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
@@ -52,6 +57,8 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const [showAdmin, setShowAdmin] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showAppInfo, setShowAppInfo] = useState(false);
+  const [playingSpeech, setPlayingSpeech] = useState<GeneratedSpeech | null>(null);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
@@ -79,7 +86,7 @@ const App: React.FC = () => {
   }, [settings.accentColor]);
 
   useEffect(() => {
-    const sizes = { small: '14px', medium: '15px', large: '17px' };
+    const sizes = { small: '14px', medium: '16px', large: '18px' };
     document.documentElement.style.fontSize = sizes[settings.fontSize];
   }, [settings.fontSize]);
 
@@ -111,8 +118,10 @@ const App: React.FC = () => {
       const t0 = Date.now();
       const audioUrl = await generateSpeech(text, actor, preset, customTone);
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-      setHistory(prev => [{ id: Date.now().toString(), text, actor, preset, customTone: customTone || undefined, audioUrl, timestamp: Date.now() }, ...prev]);
+      const newSpeech: GeneratedSpeech = { id: Date.now().toString(), text, actor, preset, customTone: customTone || undefined, audioUrl, timestamp: Date.now() };
+      setHistory(prev => [newSpeech, ...prev]);
       setStatus(GenerationState.COMPLETED);
+      setPlayingSpeech(newSpeech); // Show audio player modal
       addToast('success', lang === 'ar' ? 'تم ✓' : 'Done ✓', lang === 'ar' ? `في ${elapsed} ثانية` : `${elapsed}s`);
       showBrowserNotification('MASRI Studio', lang === 'ar' ? `تم في ${elapsed} ثانية` : `Done in ${elapsed}s`);
       playNotificationSound('success');
@@ -126,6 +135,22 @@ const App: React.FC = () => {
   const handleDelete = (id: string) => { setHistory(prev => prev.filter(i => i.id !== id)); setFavorites(prev => prev.filter(f => f !== id)); };
   const handleBatchGenerated = (speeches: GeneratedSpeech[]) => { setHistory(prev => [...speeches, ...prev]); };
 
+  const getUsers = () => {
+    const u = localStorage.getItem('masri-users');
+    return u ? JSON.parse(u) : [];
+  };
+
+  const stats = {
+    members: getUsers().length + 1, // +1 for admin
+    generations: history.length,
+    favorites: favorites.length,
+  };
+
+  // Show Splash Screen first
+  if (showSplash) {
+    return <SplashScreen appName={settings.appName} onComplete={() => setShowSplash(false)} />;
+  }
+
   if (!isAuthenticated) return <LoginScreen onLogin={handleLogin} lang={lang} />;
   if (showAdmin && isAdmin) return <AdminPanel lang={lang} settings={settings} onSaveSettings={handleSaveSettings} onClose={() => setShowAdmin(false)} onLogout={handleLogout} />;
 
@@ -133,28 +158,36 @@ const App: React.FC = () => {
     <div className={`min-h-screen flex flex-col relative ${lang === 'ar' ? 'dir-rtl' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <ToastContainer />
       <ApiKeyModal isOpen={showApiKey} onClose={() => setShowApiKey(false)} lang={lang} />
+      <AudioPlayerModal speech={playingSpeech} onClose={() => setPlayingSpeech(null)} lang={lang} />
+      <AppInfoModal isOpen={showAppInfo} onClose={() => setShowAppInfo(false)} lang={lang} stats={stats} />
+      <InstallPrompt lang={lang} />
 
       <Navbar lang={lang} currentUser={currentUser} isAdmin={isAdmin} onToggleLang={toggleLang} onLogout={handleLogout} onOpenAdmin={() => setShowAdmin(true)} onOpenApiKey={() => setShowApiKey(true)} onNavigate={setCurrentPage} currentPage={currentPage} navItems={settings.navItems} appName={settings.appName} />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 relative z-10">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 relative z-10 pb-24">
         {currentPage === 'home' && <HomePage lang={lang} appName={settings.appName} onNavigate={setCurrentPage} />}
         {currentPage === 'studio' && <div className="w-full max-w-2xl mx-auto animate-fade-in"><VoiceForm onSubmit={handleGenerate} isLoading={status === GenerationState.GENERATING} lang={lang} onBatchGenerated={handleBatchGenerated} /></div>}
         {currentPage === 'history' && (
           <div className="w-full max-w-2xl mx-auto animate-fade-in">
             <div className="flex items-center gap-3 mb-5"><div className="w-10 h-10 rounded-xl icon-3d-cyan icon-3d flex items-center justify-center"><i className="fas fa-clock-rotate-left"></i></div><div><h2 className="text-base font-bold text-txt-primary">{lang === 'ar' ? 'السجل' : 'History'}</h2><p className="text-[10px] text-txt-muted">{lang === 'ar' ? `${history.length} تسجيل` : `${history.length} recordings`}</p></div></div>
             <ResultsView history={history} onDelete={handleDelete} lang={lang} favorites={favorites} onToggleFavorite={toggleFavorite} />
-            {history.length === 0 && <div className="card p-10 text-center"><div className="w-16 h-16 rounded-2xl bg-surface2 flex items-center justify-center mx-auto mb-4"><i className="fas fa-inbox text-txt-muted text-2xl"></i></div><p className="text-txt-muted text-sm mb-4">{lang === 'ar' ? 'لا توجد تسجيلات' : 'No recordings'}</p><button onClick={() => setCurrentPage('studio')} className="btn-primary px-5 py-2.5 text-sm"><i className="fas fa-plus ml-2"></i>{lang === 'ar' ? 'تسجيل جديد' : 'New Recording'}</button></div>}
+            {history.length === 0 && <div className="win11-card p-10 text-center"><div className="w-16 h-16 rounded-2xl bg-surface2 flex items-center justify-center mx-auto mb-4"><i className="fas fa-inbox text-txt-muted text-2xl"></i></div><p className="text-txt-muted text-sm mb-4">{lang === 'ar' ? 'لا توجد تسجيلات' : 'No recordings'}</p><button onClick={() => setCurrentPage('studio')} className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-cyan-700 text-white text-sm font-bold hover:scale-105 transition-transform"><i className="fas fa-plus ml-2"></i>{lang === 'ar' ? 'تسجيل جديد' : 'New Recording'}</button></div>}
           </div>
         )}
         {currentPage === 'library' && (
           <div className="w-full max-w-2xl mx-auto animate-fade-in">
             <div className="flex items-center gap-3 mb-5"><div className="w-10 h-10 rounded-xl icon-3d-pink icon-3d flex items-center justify-center"><i className="fas fa-book"></i></div><div><h2 className="text-base font-bold text-txt-primary">{lang === 'ar' ? 'مكتبتي' : 'Library'}</h2><p className="text-[10px] text-txt-muted">{favorites.length} {lang === 'ar' ? 'مفضلة' : 'favorites'}</p></div></div>
-            {favorites.length > 0 ? <ResultsView history={history.filter(h => favorites.includes(h.id))} onDelete={handleDelete} lang={lang} favorites={favorites} onToggleFavorite={toggleFavorite} /> : <div className="card p-10 text-center"><div className="w-16 h-16 rounded-2xl bg-surface2 flex items-center justify-center mx-auto mb-4"><i className="fas fa-book-open text-txt-muted text-2xl"></i></div><p className="text-txt-muted text-sm">{lang === 'ar' ? 'اضغط القلب لإضافة تسجيلات' : 'Press heart to add recordings'}</p></div>}
+            {favorites.length > 0 ? <ResultsView history={history.filter(h => favorites.includes(h.id))} onDelete={handleDelete} lang={lang} favorites={favorites} onToggleFavorite={toggleFavorite} /> : <div className="win11-card p-10 text-center"><div className="w-16 h-16 rounded-2xl bg-surface2 flex items-center justify-center mx-auto mb-4"><i className="fas fa-book-open text-txt-muted text-2xl"></i></div><p className="text-txt-muted text-sm">{lang === 'ar' ? 'اضغط القلب لإضافة تسجيلات' : 'Press heart to add recordings'}</p></div>}
           </div>
         )}
       </main>
 
-      {currentPage !== 'home' && <footer className="border-t border-border mt-8 py-4 text-center relative z-10"><p className="text-txt-muted text-xs">{lang === 'ar' ? 'تصميم' : 'Designed by'} <span className="text-accent font-semibold mx-1">WAEL SAMIR</span>© 2025</p></footer>}
+      {/* FAB Button - App Info */}
+      <button onClick={() => setShowAppInfo(true)} className="fab-button" title={lang === 'ar' ? 'معلومات التطبيق' : 'App Info'}>
+        <i className="fas fa-info text-xl"></i>
+      </button>
+
+      {currentPage !== 'home' && <footer className="border-t border-border mt-8 py-4 text-center relative z-10"><p className="text-txt-muted text-xs">{lang === 'ar' ? 'تصميم' : 'Designed by'} <span className="text-cyan-400 font-bold">WAEL SAMIR</span> © 2025</p></footer>}
     </div>
   );
 };
