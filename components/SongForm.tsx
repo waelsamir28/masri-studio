@@ -273,65 +273,92 @@ export const VoiceForm: React.FC<VoiceFormProps> = ({ onSubmit, isLoading, lang,
           <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
 
           {/* Magic Writer */}
-          <div className="win11-card p-4 border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 rounded-xl icon-3d-purple icon-3d flex items-center justify-center"><i className="fas fa-wand-magic-sparkles"></i></div>
-              <div><h3 className="text-xs font-bold text-txt-primary">{lang === 'ar' ? 'المؤلف الذكي' : 'Magic Writer'}</h3><p className="text-[9px] text-txt-muted">{lang === 'ar' ? 'اكتب فكرة نكتب النص' : 'AI writes for you'}</p></div>
-            </div>
-            <div className="flex flex-col gap-3">
-              <input type="text" value={scriptTopic} onChange={(e) => setScriptTopic(e.target.value)} placeholder={lang === 'ar' ? 'فكرة: إعلان كشري، قصة...' : 'Topic...'} className="w-full py-2.5 px-3 rounded-xl bg-surface2 border border-border text-sm text-txt-primary placeholder-txt-muted focus:border-accent outline-none" />
-              <div className="flex items-center gap-2">
-                <div className="flex bg-surface2 p-0.5 rounded-lg">
-                  {(['SHORT', 'MEDIUM', 'LONG'] as const).map(len => (
-                    <button key={len} type="button" onClick={() => setScriptLength(len)} className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all ${scriptLength === len ? 'bg-cyan-500 text-white' : 'text-txt-muted'}`}>
-                      {len === 'SHORT' ? (lang === 'ar' ? 'قصير' : 'Short') : len === 'MEDIUM' ? (lang === 'ar' ? 'متوسط' : 'Medium') : (lang === 'ar' ? 'طويل' : 'Long')}
-                    </button>
-                  ))}
-                </div>
-                <button type="button" onClick={handleMagicWrite} disabled={isScriptLoading || !scriptTopic.trim()} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${!scriptTopic.trim() ? 'bg-surface2 text-txt-muted cursor-not-allowed border border-border' : 'bg-gradient-to-r from-cyan-500 to-cyan-700 text-white shadow-lg'}`}>
-                  {isScriptLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-pen-nib"></i>}
-                  {lang === 'ar' ? 'تأليف' : 'Compose'}
-                </button>
+          <div className="win11-card p-5 border-accent/20 bg-gradient-to-br from-accent/5 via-accent/2 to-transparent relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl"></div>
+            <div className="relative flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl icon-3d-purple icon-3d flex items-center justify-center animate-float"><i className="fas fa-wand-magic-sparkles text-lg"></i></div>
+              <div>
+                <h3 className="text-sm font-bold text-txt-primary flex items-center gap-2">{lang === 'ar' ? 'المؤلف الذكي' : 'Magic Writer'} <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-accent/10 text-accent">AI</span></h3>
+                <p className="text-[10px] text-txt-muted">{lang === 'ar' ? 'اكتب فكرة وسيب الذكاء الاصطناعي يكتب النص' : 'Write an idea and let AI write the script'}</p>
               </div>
+            </div>
+            <div className="relative">
+              <input type="text" value={scriptTopic} onChange={(e) => setScriptTopic(e.target.value)} placeholder={lang === 'ar' ? '💡 مثال: إعلان كشري، قصة رعب قصيرة...' : '💡 Example: Coffee ad, horror story...'} className="w-full py-3 px-4 rounded-xl bg-surface2/80 border border-border text-sm text-txt-primary placeholder-txt-muted focus:border-accent focus:ring-2 focus:ring-accent/10 outline-none transition-all" />
+            </div>
+            <div className="flex items-center gap-2 mt-3">
+              <div className="flex bg-surface2 p-0.5 rounded-lg">
+                {(['SHORT', 'MEDIUM', 'LONG'] as const).map(len => (
+                  <button key={len} type="button" onClick={() => setScriptLength(len)} className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all ${scriptLength === len ? 'bg-cyan-500 text-white shadow-sm' : 'text-txt-muted hover:text-txt-primary'}`}>
+                    {len === 'SHORT' ? (lang === 'ar' ? 'قصير' : 'Short') : len === 'MEDIUM' ? (lang === 'ar' ? 'متوسط' : 'Medium') : (lang === 'ar' ? 'طويل' : 'Long')}
+                  </button>
+                ))}
+              </div>
+              <button type="button" onClick={handleMagicWrite} disabled={isScriptLoading || !scriptTopic.trim()} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${!scriptTopic.trim() ? 'bg-surface2 text-txt-muted cursor-not-allowed border border-border' : 'bg-gradient-to-r from-purple-500 to-purple-700 text-white shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02]'}`}>
+                {isScriptLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-pen-nib"></i>}
+                {lang === 'ar' ? 'تأليف النص' : 'Compose'}
+              </button>
             </div>
           </div>
 
           {/* Quick Phrases */}
           <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
             {QUICK_PHRASES.map((phrase, idx) => (
-              <button key={idx} type="button" onClick={() => setText(phrase)} className="whitespace-nowrap px-3 py-1.5 rounded-xl win11-button text-[10px] shrink-0">{phrase}</button>
+              <button key={idx} type="button" onClick={() => setText(phrase)} className="whitespace-nowrap px-3 py-1.5 rounded-xl win11-button text-[10px] shrink-0 hover:border-accent/30">{phrase}</button>
             ))}
           </div>
 
           {/* Text Input */}
-          <div className="relative">
-            <textarea ref={textareaRef} value={text} onChange={(e) => setText(e.target.value)} placeholder={lang === 'ar' ? 'اكتب النص هنا...' : 'Type script here...'} rows={4} className="w-full p-4 pb-10 rounded-xl bg-surface2 border border-border text-sm text-txt-primary placeholder-txt-muted focus:border-accent outline-none resize-none" dir="rtl" />
-            <div className="absolute bottom-3 left-3 text-[9px] text-txt-muted">{text.length} chars</div>
-            <button type="button" onClick={handleEnhanceText} disabled={!text.trim() || isEnhancing || !selectedActorId} title={lang === 'ar' ? 'تحسين' : 'Enhance'} className={`absolute bottom-3 right-3 w-9 h-9 flex items-center justify-center rounded-xl text-xs transition-all ${!text.trim() || isEnhancing ? 'bg-surface2 text-txt-muted cursor-not-allowed' : 'icon-3d-purple icon-3d'}`}>
-              {isEnhancing ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-wand-magic-sparkles"></i>}
-            </button>
+          <div>
+            <label className="text-xs font-bold text-accent flex items-center gap-1.5 mb-2">
+              <i className="fas fa-keyboard"></i>
+              {lang === 'ar' ? 'نص الإعلان' : 'Script Text'}
+            </label>
+            <div className="relative">
+              <textarea ref={textareaRef} value={text} onChange={(e) => setText(e.target.value)} placeholder={lang === 'ar' ? 'اكتب النص هنا أو استخدم المؤلف الذكي...' : 'Type here or use Magic Writer...'} rows={5} className="w-full p-4 pb-12 rounded-xl bg-surface2/80 border border-border text-sm text-txt-primary placeholder-txt-muted focus:border-accent focus:ring-2 focus:ring-accent/10 outline-none resize-none leading-relaxed" dir="rtl" />
+              <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                <span className="text-[9px] text-txt-muted bg-surface2 px-2 py-0.5 rounded">{text.length} chars</span>
+              </div>
+              <button type="button" onClick={handleEnhanceText} disabled={!text.trim() || isEnhancing || !selectedActorId} title={lang === 'ar' ? 'تحسين بالذكاء الاصطناعي' : 'AI Enhance'} className={`absolute bottom-3 right-3 w-9 h-9 flex items-center justify-center rounded-xl text-xs transition-all ${!text.trim() || isEnhancing ? 'bg-surface2 text-txt-muted cursor-not-allowed' : 'icon-3d-purple icon-3d hover:scale-110'}`}>
+                {isEnhancing ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-wand-magic-sparkles"></i>}
+              </button>
+            </div>
           </div>
           
-          {/* Emotion Tags */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-            <span className="text-[10px] font-bold text-accent shrink-0 flex items-center gap-1"><i className="fas fa-face-grin-stars"></i>{lang === 'ar' ? 'انفعالات:' : 'Emotions:'}</span>
-            {EMOTION_TAGS.map((tag, idx) => (
-              <button key={idx} type="button" onClick={() => insertAtCursor(tag.value)} className="whitespace-nowrap px-2.5 py-1.5 rounded-xl win11-button text-[10px] shrink-0">{tag.label}</button>
-            ))}
+          {/* Emotion Tags - Grid Layout */}
+          <div>
+            <label className="text-xs font-bold text-accent flex items-center gap-1.5 mb-2">
+              <i className="fas fa-face-grin-stars"></i>
+              {lang === 'ar' ? 'الانفعالات والأداء' : 'Emotions & Performance'}
+            </label>
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+              {EMOTION_TAGS.map((tag, idx) => (
+                <button key={idx} type="button" onClick={() => insertAtCursor(tag.value)} className="px-2 py-2 rounded-xl win11-button text-[10px] font-medium flex items-center justify-center gap-1 hover:border-accent/30 hover:scale-105 transition-all">
+                  {tag.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Action Bar */}
-          <div className="flex flex-wrap items-center gap-2" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+          <div className="flex flex-wrap items-center gap-2 pb-20" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
             <button type="button" onClick={() => setShowTemplates(true)} className="px-3 py-2 rounded-xl win11-button text-xs font-bold flex items-center gap-1.5"><i className="fas fa-file-lines text-[11px]"></i>{lang === 'ar' ? 'قوالب' : 'Templates'}</button>
             <BatchGenerate text={text} lang={lang} onGenerated={onBatchGenerated || (() => {})} />
             <GenerationTimer isActive={isLoading} />
           </div>
         </form>
 
-        {/* Submit Button */}
-        <button type="submit" onClick={handleSubmit} disabled={isLoading || !text.trim()} className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${isLoading || !text.trim() ? 'bg-surface2 text-txt-muted cursor-not-allowed border border-border' : 'bg-gradient-to-r from-cyan-500 to-cyan-700 text-white shadow-xl shadow-cyan-500/20 hover:shadow-cyan-500/40'}`}>
-          {isLoading ? <i className="fas fa-circle-notch fa-spin text-lg"></i> : <><i className="fas fa-play"></i><span>{lang === 'ar' ? 'توليد الصوت الآن' : 'GENERATE AUDIO'}</span></>}
-        </button>
+        {/* Sticky Animated Generate Button */}
+        <div className="sticky bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-primary via-primary/95 to-primary/80 backdrop-blur-lg border-t border-border z-10">
+          <button type="submit" onClick={handleSubmit} disabled={isLoading || !text.trim()} className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 relative overflow-hidden ${isLoading || !text.trim() ? 'bg-surface2 text-txt-muted cursor-not-allowed border border-border' : 'bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-500 text-white shadow-xl shadow-cyan-500/30 animate-generate-btn bg-[length:200%_100%]'}`}>
+            {isLoading ? (
+              <><i className="fas fa-circle-notch fa-spin text-lg"></i><span>{lang === 'ar' ? 'جاري التوليد...' : 'Generating...'}</span></>
+            ) : !text.trim() ? (
+              <><i className="fas fa-lock"></i><span>{lang === 'ar' ? 'اكتب نصاً للبدء' : 'Write text to start'}</span></>
+            ) : (
+              <><i className="fas fa-play"></i><span>{lang === 'ar' ? 'توليد الصوت الآن' : 'GENERATE AUDIO'}</span><i className="fas fa-sparkles"></i></>
+            )}
+          </button>
+        </div>
       </div>
 
       <TemplatesModal isOpen={showTemplates} onClose={() => setShowTemplates(false)} onSelect={handleTemplateSelect} lang={lang} />

@@ -20,6 +20,7 @@ const THEMES: Record<string, { name: string; nameAr: string; class: string }> = 
   warm: { name: 'Warm Sunset', nameAr: 'غروب دافئ', class: 'theme-warm' },
   forest: { name: 'Forest Night', nameAr: 'غابة ليلية', class: 'theme-forest' },
   neon: { name: 'Neon Night', nameAr: 'نيون ليلي', class: 'theme-neon' },
+  light: { name: 'Light Mode', nameAr: 'الوضع النهاري', class: 'theme-light' },
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
