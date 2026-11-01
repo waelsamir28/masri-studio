@@ -24,6 +24,11 @@ const ACTOR_EMOJIS: Record<string, string> = {
   actor_nour: '🌹', actor_menna: '📱', actor_salma: '👩‍💼', actor_faten: '🎭',
 };
 
+const VOICE_ACTORS_INDEX = (id: string): number => {
+  const ids = ['actor_hassan','actor_amr','actor_mido','actor_sherif','actor_tarek','actor_khaled','actor_magdy','actor_youssef','actor_seif','actor_kareem','actor_moataz','actor_layla','actor_dalia','actor_sarah','actor_rania','actor_hoda','actor_nour','actor_menna','actor_salma','actor_faten'];
+  return ids.indexOf(id);
+};
+
 export const ResultsView: React.FC<ResultsViewProps> = ({ history, onDelete, lang, favorites = [], onToggleFavorite }) => {
   const processorRef = useRef<VoiceProcessor | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -81,13 +86,13 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ history, onDelete, lan
 
   return (
     <div className="flex flex-col gap-3 w-full">
-      {history.map((speech, idx) => {
+      {history.map((speech) => {
         const isPlaying = playingId === speech.id;
         const isFavorite = favorites.includes(speech.id);
         const gradient = ACTOR_GRADIENTS[VOICE_ACTORS_INDEX(speech.actor.id) % ACTOR_GRADIENTS.length];
         const emoji = ACTOR_EMOJIS[speech.actor.id] || '🎤';
         return (
-          <div key={speech.id} className={`card p-4 flex flex-col gap-3 animate-slide-up ${isPlaying ? 'border-accent shadow-[0_0_20px_rgba(6,182,212,0.15)]' : ''}`}>
+          <div key={speech.id} className={`win11-card p-4 flex flex-col gap-3 animate-slide-up ${isPlaying ? 'border-accent shadow-[0_0_20px_rgba(6,182,212,0.15)]' : ''}`}>
              <div className="flex items-center gap-3">
                 <div className={`relative w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 shadow-md`}>
                     <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/20 to-transparent pointer-events-none"></div>
@@ -103,18 +108,18 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ history, onDelete, lan
                 </div>
              </div>
 
-             <div className="flex items-center gap-2 p-2 rounded-xl bg-surface2 border border-border">
+             <div className="flex items-center gap-2 p-2 rounded-xl bg-surface2/50 border border-border">
                 <div className="flex-1 h-10 relative rounded-lg overflow-hidden">
                    {isPlaying ? <canvas ref={canvasRef} width={300} height={40} className="w-full h-full" /> : <div className="w-full h-full flex items-center justify-center"><div className="h-px w-full bg-border"></div></div>}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => handlePlay(speech)} className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all text-xs ${isPlaying ? 'bg-accent text-white shadow-lg' : 'bg-surface border border-border text-txt-muted hover:text-accent hover:border-accent/30'}`}><i className={`fas ${isPlaying ? 'fa-stop' : 'fa-play pl-0.5'}`}></i></button>
-                    <button onClick={() => handleDownload(speech)} className="w-9 h-9 rounded-xl bg-surface border border-border text-txt-muted hover:text-accent hover:border-accent/30 flex items-center justify-center transition-all text-xs"><i className="fas fa-download"></i></button>
-                    <button onClick={() => setShareModal({ isOpen: true, speech })} className="w-9 h-9 rounded-xl bg-surface border border-border text-txt-muted hover:text-blue-400 flex items-center justify-center transition-all text-xs"><i className="fas fa-share-nodes"></i></button>
+                    <button onClick={() => handlePlay(speech)} className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all text-xs ${isPlaying ? 'bg-accent text-white shadow-lg' : 'win11-button text-txt-muted'}`}><i className={`fas ${isPlaying ? 'fa-stop' : 'fa-play pl-0.5'}`}></i></button>
+                    <button onClick={() => handleDownload(speech)} className="w-9 h-9 rounded-xl win11-button text-txt-muted hover:text-accent flex items-center justify-center transition-all text-xs"><i className="fas fa-download"></i></button>
+                    <button onClick={() => setShareModal({ isOpen: true, speech })} className="w-9 h-9 rounded-xl win11-button text-txt-muted hover:text-blue-400 flex items-center justify-center transition-all text-xs"><i className="fas fa-share-nodes"></i></button>
                     {onToggleFavorite && (
-                      <button onClick={() => onToggleFavorite(speech.id)} className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all text-xs border ${isFavorite ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-surface border-border text-txt-muted hover:text-red-400'}`}><i className={`fas fa-heart ${isFavorite ? 'fa-beat' : ''}`}></i></button>
+                      <button onClick={() => onToggleFavorite(speech.id)} className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all text-xs border ${isFavorite ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'win11-button text-txt-muted hover:text-red-400'}`}><i className={`fas fa-heart ${isFavorite ? 'fa-beat' : ''}`}></i></button>
                     )}
-                    <button onClick={() => onDelete(speech.id)} className="w-9 h-9 rounded-xl bg-surface border border-border text-txt-muted hover:text-red-400 flex items-center justify-center transition-all text-xs"><i className="fas fa-trash-alt"></i></button>
+                    <button onClick={() => onDelete(speech.id)} className="w-9 h-9 rounded-xl win11-button text-txt-muted hover:text-red-400 flex items-center justify-center transition-all text-xs"><i className="fas fa-trash-alt"></i></button>
                 </div>
              </div>
           </div>
@@ -123,9 +128,4 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ history, onDelete, lan
       {shareModal.speech && <ShareModal isOpen={shareModal.isOpen} onClose={() => setShareModal({ isOpen: false, speech: null })} text={shareModal.speech.text} actorName={lang === 'ar' ? shareModal.speech.actor.nameAr : shareModal.speech.actor.name} lang={lang} />}
     </div>
   );
-};
-
-const VOICE_ACTORS_INDEX = (id: string): number => {
-  const ids = ['actor_hassan','actor_amr','actor_mido','actor_sherif','actor_tarek','actor_khaled','actor_magdy','actor_youssef','actor_seif','actor_kareem','actor_moataz','actor_layla','actor_dalia','actor_sarah','actor_rania','actor_hoda','actor_nour','actor_menna','actor_salma','actor_faten'];
-  return ids.indexOf(id);
 };

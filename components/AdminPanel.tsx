@@ -72,8 +72,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, settings, onSaveSe
             <div><h1 className="font-bold text-sm text-txt-primary">{lang === 'ar' ? 'لوحة التحكم' : 'Control Panel'}</h1><p className="text-[9px] text-txt-muted">{lang === 'ar' ? 'مرحباً، المشرف' : 'Welcome, Admin'}</p></div>
           </div>
           <div className="flex items-center gap-1.5">
-            <button onClick={handleSave} className={`px-3 py-2 rounded-xl text-xs font-bold transition-all btn-soft flex items-center gap-1.5 ${saved ? 'bg-emerald-500 text-white' : 'btn-primary'}`}>{saved ? <><i className="fas fa-check"></i>{lang === 'ar' ? 'تم' : 'Saved'}</> : <><i className="fas fa-save"></i>{lang === 'ar' ? 'حفظ' : 'Save'}</>}</button>
-            <button onClick={onClose} className="px-3 py-2 rounded-xl btn-secondary text-xs font-bold flex items-center gap-1.5"><i className="fas fa-arrow-right text-[10px]"></i>{lang === 'ar' ? 'العودة' : 'Back'}</button>
+            <button onClick={handleSave} className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${saved ? 'bg-emerald-500 text-white' : 'bg-gradient-to-r from-cyan-500 to-cyan-700 text-white shadow-lg'}`}>{saved ? <><i className="fas fa-check"></i>{lang === 'ar' ? 'تم' : 'Saved'}</> : <><i className="fas fa-save"></i>{lang === 'ar' ? 'حفظ' : 'Save'}</>}</button>
+            <button onClick={onClose} className="px-3 py-2 rounded-xl win11-button text-xs font-bold flex items-center gap-1.5"><i className="fas fa-arrow-right text-[10px]"></i>{lang === 'ar' ? 'العودة' : 'Back'}</button>
             <button onClick={onLogout} className="px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-all flex items-center gap-1.5"><i className="fas fa-arrow-right-from-bracket text-[10px]"></i>{lang === 'ar' ? 'خروج' : 'Logout'}</button>
           </div>
         </div>
@@ -81,9 +81,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, settings, onSaveSe
 
       {/* Content */}
       <div className="max-w-5xl mx-auto w-full px-4 py-6 flex gap-6">
-        {/* Sidebar */}
         <div className="w-48 shrink-0">
-          <div className="card p-2 space-y-1 sticky top-20">
+          <div className="win11-card p-2 space-y-1 sticky top-20">
             {tabs.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${activeTab === tab.id ? 'bg-accent-soft text-accent' : 'text-txt-muted hover:text-txt-secondary hover:bg-surface2'}`}>
                 <i className={`fas ${tab.icon} w-4 text-center text-[10px]`}></i><span>{tab.label}</span>
@@ -92,20 +91,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, settings, onSaveSe
           </div>
         </div>
 
-        {/* Main */}
         <div className="flex-1 min-w-0">
           {activeTab === 'general' && (
-            <div className="card p-5 animate-fade-in space-y-5">
+            <div className="win11-card p-5 animate-fade-in space-y-5">
               <h2 className="text-sm font-bold text-txt-primary flex items-center gap-2"><div className="w-8 h-8 rounded-xl icon-3d-blue icon-3d flex items-center justify-center"><i className="fas fa-gear text-xs"></i></div>{lang === 'ar' ? 'الإعدادات العامة' : 'General'}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div><label className="block text-xs font-bold text-txt-secondary mb-1.5">{lang === 'ar' ? 'اسم التطبيق' : 'App Name'}</label><input type="text" value={localSettings.appName} onChange={(e) => setLocalSettings(prev => ({ ...prev, appName: e.target.value }))} className="input w-full px-3 py-2.5 text-sm" /></div>
-                <div><label className="block text-xs font-bold text-txt-secondary mb-1.5">{lang === 'ar' ? 'الوصف' : 'Description'}</label><input type="text" value={localSettings.appDescription} onChange={(e) => setLocalSettings(prev => ({ ...prev, appDescription: e.target.value }))} className="input w-full px-3 py-2.5 text-sm" /></div>
+                <div><label className="block text-xs font-bold text-txt-secondary mb-1.5">{lang === 'ar' ? 'اسم التطبيق' : 'App Name'}</label><input type="text" value={localSettings.appName} onChange={(e) => setLocalSettings(prev => ({ ...prev, appName: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl bg-surface2 border border-border text-sm text-txt-primary focus:border-accent outline-none" /></div>
+                <div><label className="block text-xs font-bold text-txt-secondary mb-1.5">{lang === 'ar' ? 'الوصف' : 'Description'}</label><input type="text" value={localSettings.appDescription} onChange={(e) => setLocalSettings(prev => ({ ...prev, appDescription: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl bg-surface2 border border-border text-sm text-txt-primary focus:border-accent outline-none" /></div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-txt-secondary mb-2">{lang === 'ar' ? 'حجم الخط' : 'Font Size'}</label>
                 <div className="flex gap-2">
                   {(['small', 'medium', 'large'] as const).map(size => (
-                    <button key={size} onClick={() => setLocalSettings(prev => ({ ...prev, fontSize: size }))} className={`flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all ${localSettings.fontSize === size ? 'btn-primary border-accent' : 'btn-secondary'}`}>{lang === 'ar' ? (size === 'small' ? 'صغير' : size === 'medium' ? 'متوسط' : 'كبير') : size.charAt(0).toUpperCase() + size.slice(1)}</button>
+                    <button key={size} onClick={() => setLocalSettings(prev => ({ ...prev, fontSize: size }))} className={`flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all ${localSettings.fontSize === size ? 'bg-gradient-to-r from-cyan-500 to-cyan-700 text-white shadow-lg' : 'win11-button text-txt-muted'}`}>{lang === 'ar' ? (size === 'small' ? 'صغير' : size === 'medium' ? 'متوسط' : 'كبير') : size.charAt(0).toUpperCase() + size.slice(1)}</button>
                   ))}
                 </div>
               </div>
@@ -113,10 +111,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, settings, onSaveSe
           )}
 
           {activeTab === 'theme' && (
-            <div className="card p-5 animate-fade-in space-y-6">
+            <div className="win11-card p-5 animate-fade-in space-y-6">
               <h2 className="text-sm font-bold text-txt-primary flex items-center gap-2"><div className="w-8 h-8 rounded-xl icon-3d-pink icon-3d flex items-center justify-center"><i className="fas fa-palette text-xs"></i></div>{lang === 'ar' ? 'الثيمات والألوان' : 'Themes & Colors'}</h2>
               
-              {/* Theme Selection */}
               <div>
                 <label className="block text-xs font-bold text-txt-secondary mb-3">{lang === 'ar' ? 'اختر الثيم' : 'Choose Theme'}</label>
                 <div className="grid grid-cols-2 gap-3">
@@ -137,7 +134,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, settings, onSaveSe
                 </div>
               </div>
 
-              {/* Accent Color */}
               <div>
                 <label className="block text-xs font-bold text-txt-secondary mb-2">{lang === 'ar' ? 'اللون الرئيسي' : 'Accent Color'}</label>
                 <div className="grid grid-cols-5 gap-2">
@@ -152,13 +148,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, settings, onSaveSe
           )}
 
           {activeTab === 'banner' && (
-            <div className="card p-5 animate-fade-in space-y-5">
+            <div className="win11-card p-5 animate-fade-in space-y-5">
               <h2 className="text-sm font-bold text-txt-primary flex items-center gap-2"><div className="w-8 h-8 rounded-xl icon-3d-orange icon-3d flex items-center justify-center"><i className="fas fa-image text-xs"></i></div>{lang === 'ar' ? 'البانر' : 'Banner'}</h2>
               <div className="relative rounded-xl overflow-hidden border border-border aspect-[3/1] bg-surface2">
                 {localSettings.bannerUrl ? <img src={localSettings.bannerUrl} alt="Banner" className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center text-txt-muted gap-2"><i className="fas fa-image text-3xl opacity-30"></i><p className="text-xs">{lang === 'ar' ? 'لا يوجد بانر' : 'No banner'}</p></div>}
               </div>
               <div className="flex gap-2">
-                <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2.5 rounded-xl btn-primary text-xs font-bold flex items-center gap-1.5"><i className="fas fa-upload text-[10px]"></i>{lang === 'ar' ? 'رفع بانر' : 'Upload'}</button>
+                <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg"><i className="fas fa-upload text-[10px]"></i>{lang === 'ar' ? 'رفع بانر' : 'Upload'}</button>
                 {localSettings.bannerUrl && <button onClick={removeBanner} className="px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-all flex items-center gap-1.5"><i className="fas fa-trash text-[10px]"></i>{lang === 'ar' ? 'حذف' : 'Remove'}</button>}
               </div>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" />
@@ -166,16 +162,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ lang, settings, onSaveSe
           )}
 
           {activeTab === 'navigation' && (
-            <div className="card p-5 animate-fade-in space-y-4">
+            <div className="win11-card p-5 animate-fade-in space-y-4">
               <h2 className="text-sm font-bold text-txt-primary flex items-center gap-2"><div className="w-8 h-8 rounded-xl icon-3d-green icon-3d flex items-center justify-center"><i className="fas fa-bars text-xs"></i></div>{lang === 'ar' ? 'القائمة' : 'Navigation'}</h2>
               <p className="text-xs text-txt-muted">{lang === 'ar' ? 'إظهار/إخفاء العناصر' : 'Toggle visibility'}</p>
               <div className="space-y-2">
                 {localSettings.navItems.map(item => (
                   <div key={item.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${item.visible ? 'border-border bg-surface2' : 'border-border/50 opacity-50'}`}>
                     <button onClick={() => toggleNavItem(item.id)} className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all text-xs ${item.visible ? 'bg-accent text-white' : 'bg-surface2 text-txt-muted border border-border'}`}><i className={`fas ${item.visible ? 'fa-eye' : 'fa-eye-slash'}`}></i></button>
-                    <input type="text" value={item.icon} onChange={(e) => updateNavItem(item.id, 'icon', e.target.value)} className="w-20 px-2 py-1.5 rounded-lg input text-[10px]" />
-                    <input type="text" value={item.label} onChange={(e) => updateNavItem(item.id, 'label', e.target.value)} className="flex-1 px-2 py-1.5 rounded-lg input text-xs" />
-                    <input type="text" value={item.labelAr} onChange={(e) => updateNavItem(item.id, 'labelAr', e.target.value)} className="flex-1 px-2 py-1.5 rounded-lg input text-xs text-right" />
+                    <input type="text" value={item.icon} onChange={(e) => updateNavItem(item.id, 'icon', e.target.value)} className="w-20 px-2 py-1.5 rounded-lg bg-surface2 border border-border text-[10px] text-txt-primary" />
+                    <input type="text" value={item.label} onChange={(e) => updateNavItem(item.id, 'label', e.target.value)} className="flex-1 px-2 py-1.5 rounded-lg bg-surface2 border border-border text-xs text-txt-primary" />
+                    <input type="text" value={item.labelAr} onChange={(e) => updateNavItem(item.id, 'labelAr', e.target.value)} className="flex-1 px-2 py-1.5 rounded-lg bg-surface2 border border-border text-xs text-txt-primary text-right" />
                   </div>
                 ))}
               </div>
