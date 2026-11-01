@@ -350,4 +350,78 @@ export interface GeneratedSpeech {
   customTone?: string; 
   audioUrl?: string; 
   timestamp: number;
+  folder?: string;
+  shared?: boolean;
+}
+
+// ============ VOICE CLONING ============
+export interface ClonedVoice {
+  id: string;
+  name: string;
+  sampleDataUrl: string; // Base64 of uploaded sample
+  createdAt: number;
+  status: 'processing' | 'ready' | 'error';
+}
+
+// ============ AI ASSISTANT ============
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+  suggestions?: string[];
+}
+
+// ============ TEAM WORKSPACE ============
+export type TeamRole = 'admin' | 'editor' | 'viewer';
+
+export interface TeamMember {
+  id: string;
+  username: string;
+  nameAr: string;
+  role: TeamRole;
+  avatar?: string;
+  joinedAt: number;
+  generations: number;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  ownerId: string;
+  members: TeamMember[];
+  createdAt: number;
+  maxMembers: number;
+}
+
+// ============ SUBSCRIPTIONS ============
+export type PlanType = 'free' | 'pro' | 'business';
+export type PaymentMethod = 'visa' | 'vodafone_cash' | 'fawry' | 'instapay';
+
+export interface PlanFeature {
+  key: string;
+  label: string;
+  labelAr: string;
+  free: string;
+  pro: string;
+  business: string;
+}
+
+export interface UserSubscription {
+  plan: PlanType;
+  generationsToday: number;
+  generationsLimit: number;
+  expiresAt?: number;
+  paymentMethod?: PaymentMethod;
+  teamId?: string;
+}
+
+// ============ FOLDERS ============
+export interface Folder {
+  id: string;
+  name: string;
+  nameAr: string;
+  color: string;
+  icon: string;
+  createdAt: number;
 }
