@@ -25,6 +25,7 @@ const THEMES = [
   { id: 'warm', name: 'Warm Sunset', nameAr: 'غروب دافئ', colors: ['#1c0f0a', '#2d1810', '#f59e0b', '#3d2218'], gradient: 'from-amber-950 via-orange-900 to-red-950' },
   { id: 'forest', name: 'Forest Night', nameAr: 'غابة ليلية', colors: ['#0a1f10', '#0f2d18', '#10b981', '#183d22'], gradient: 'from-emerald-950 via-green-900 to-teal-950' },
   { id: 'neon', name: 'Neon Night', nameAr: 'نيون ليلي', colors: ['#0a0a1a', '#12122a', '#a855f7', '#1a1a3a'], gradient: 'from-purple-950 via-violet-900 to-indigo-950' },
+  { id: 'light', name: 'Light Mode', nameAr: 'الوضع النهاري', colors: ['#f0f4f8', '#ffffff', '#0ea5e9', '#e2e8f0'], gradient: 'from-sky-100 via-white to-blue-100' },
 ];
 
 const ACCENT_COLORS = [

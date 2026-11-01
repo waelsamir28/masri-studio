@@ -214,7 +214,13 @@ export const generateSpeech = async (
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
     
-    return URL.createObjectURL(pcmToWav(bytes, 24000));
+    // Convert to Base64 Data URL so audio persists across sessions
+    const wavBlob = pcmToWav(bytes, 24000);
+    return new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(wavBlob);
+    });
     
   } catch (error) {
     handleGeminiError(error);
