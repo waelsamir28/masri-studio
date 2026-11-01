@@ -161,6 +161,59 @@ export const enhanceScriptWithActor = async (
   }
 };
 
+/**
+ * AI Assistant Chat - General conversation with Gemini
+ */
+export const chatWithAI = async (
+  messages: { role: string; content: string }[],
+  lang: 'en' | 'ar'
+): Promise<{ text: string; suggestions: string[] }> => {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("API Key is missing.");
+  const ai = new GoogleGenAI({ apiKey });
+
+  const systemPrompt = lang === 'ar'
+    ? `أنت مساعد ذكي في تطبيق "ستوديو مصر" لتوليد الأصوات بالذكاء الاصطناعي. 
+    مهمتك: مساعدة المستخدم في كتابة الإعلانات، تحسين النصوص، اقتراح نبرات صوتية، والإجابة عن أسئلة.
+    رد دائماً بالعربية المصرية (عامية). كن ودوداً ومفيداً.
+    بعد كل رد، اقترح 3 أسئلة يمكن للمستخدم أن يسألها.
+    أجب بشكل مختصر ومفيد (2-4 جمل كحد أقصى).`
+    : `You are a helpful AI assistant in "MASRI Studio" - an AI voice generation app.
+    Help users write ads, improve scripts, suggest voice tones, and answer questions.
+    Keep responses short and useful (2-4 sentences max).
+    After each reply, suggest 3 follow-up questions.`;
+
+  const contents = [
+    { role: 'user', parts: [{ text: systemPrompt }] },
+    { role: 'model', parts: [{ text: lang === 'ar' ? 'أهلاً! أنا مساعدك الذكي في ستوديو مصر. إزاي أقدر أساعدك؟' : 'Hello! I\'m your AI assistant at MASRI Studio. How can I help?' }] },
+    ...messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] }))
+  ];
+
+  try {
+    const response = await retryWithBackoff<GenerateContentResponse>(() => ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents,
+    }));
+
+    const text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // Extract suggestions from the response
+    const suggestions: string[] = [];
+    const cleanedText = text.replace(/أسئلة مقترحة:?\s*\n?([\s\S]*)/i, (match, sugg) => {
+      sugg.split(/\n|[-•*]\s/).filter((s: string) => s.trim()).slice(0, 3).forEach((s: string) => suggestions.push(s.trim().replace(/^[-•*]\s*/, '')));
+      return '';
+    }).replace(/Suggested questions:?\s*\n?([\s\S]*)/i, (match, sugg) => {
+      sugg.split(/\n|[-•*]\s/).filter((s: string) => s.trim()).slice(0, 3).forEach((s: string) => suggestions.push(s.trim().replace(/^[-•*]\s*/, '')));
+      return '';
+    });
+
+    return { text: cleanedText.trim(), suggestions };
+  } catch (error) {
+    handleGeminiError(error);
+    return { text: '', suggestions: [] };
+  }
+};
+
 export const generateSpeech = async (
   text: string, 
   actor: VoiceActor,
